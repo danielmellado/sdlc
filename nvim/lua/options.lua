@@ -40,6 +40,10 @@ opt.signcolumn = "yes"
 opt.laststatus = 3
 opt.showmode = false
 
+-- Prevent ghost/duplicate line rendering over SSH + tmux
+vim.o.lazyredraw = false
+vim.o.ttyfast = true
+
 opt.scrolloff = 8
 opt.sidescrolloff = 8
 

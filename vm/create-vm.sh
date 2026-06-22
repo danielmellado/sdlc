@@ -11,15 +11,15 @@ export LIBVIRT_DEFAULT_URI="qemu:///system"
 
 VM_NAME="${1:-sdlc-dev}"
 VM_CPUS=4
-VM_RAM=4096
+VM_RAM=8192
 VM_DISK=40
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SDLC_ROOT="$(dirname "$SCRIPT_DIR")"
 LIBVIRT_IMAGES="/var/lib/libvirt/images"
 CACHE_DIR="${LIBVIRT_IMAGES}/sdlc-vm"
-FEDORA_VERSION="42"
-FEDORA_IMAGE_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${FEDORA_VERSION}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${FEDORA_VERSION}-1.1.x86_64.qcow2"
+FEDORA_VERSION="44"
+FEDORA_IMAGE_URL="https://download.fedoraproject.org/pub/fedora/linux/releases/${FEDORA_VERSION}/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-${FEDORA_VERSION}-1.7.x86_64.qcow2"
 FEDORA_IMAGE="${CACHE_DIR}/fedora-cloud-${FEDORA_VERSION}.qcow2"
 
 GREEN='\033[0;32m'
@@ -42,6 +42,22 @@ for cmd in virsh virt-install qemu-img genisoimage; do
         exit 1
     fi
 done
+
+# Ensure libvirt modular daemons are running and enabled on boot
+for svc in virtqemud virtnetworkd virtstoraged; do
+    if ! systemctl is-active --quiet "$svc.socket" 2>/dev/null; then
+        info "Starting ${svc}..."
+        sudo systemctl start "${svc}.socket" "${svc}.service"
+    fi
+    sudo systemctl enable --quiet "${svc}.socket" 2>/dev/null || true
+done
+
+# Ensure the default network is active and set to autostart
+if ! virsh net-info default 2>/dev/null | grep -q "Active:.*yes"; then
+    info "Starting libvirt default network..."
+    virsh net-start default 2>/dev/null || true
+fi
+virsh net-autostart default 2>/dev/null || true
 
 if virsh dominfo "$VM_NAME" &>/dev/null; then
     err "VM '$VM_NAME' already exists. Tear it down first:"
@@ -136,6 +152,7 @@ $(echo "$PROVISION_SCRIPT" | sed 's/^/      /')
 
 runcmd:
   - systemctl enable --now qemu-guest-agent
+  - mkdir -p /etc/systemd/system/user-1000.slice.d && printf '[Slice]\nMemoryMax=infinity\n' > /etc/systemd/system/user-1000.slice.d/override.conf && systemctl daemon-reload
   - su - dev -c '/opt/sdlc-provision.sh'
 EOF
 
@@ -166,6 +183,7 @@ virt-install \
     --graphics none \
     --console pty,target_type=serial \
     --noautoconsole \
+    --autostart \
     --import
 
 # --- Ensure iptables FORWARD allows VM traffic ---
@@ -265,14 +283,79 @@ if [[ -n "$VERTEX_VARS" ]]; then
     ssh $SSH_OPTS dev@"$VM_IP" "grep -q CLAUDE_CODE_USE_VERTEX ~/.bashrc 2>/dev/null || printf '${VERTEX_VARS}' >> ~/.bashrc" 2>/dev/null
 fi
 
+# --- Ensure essential packages are installed (cloud-init package phase may have failed) ---
+info "Ensuring essential packages are installed..."
+ssh $SSH_OPTS dev@"$VM_IP" "sudo dnf install -y --nogpgcheck git tmux neovim nodejs npm golang rust cargo \
+    python3 python3-pip gcc gcc-c++ make cmake unzip ripgrep fd-find jq gh podman ShellCheck" || \
+    warn "Package install may have failed. Check connectivity inside the VM."
+
+# --- Ensure sdlc repo is cloned and shell integration is set up ---
+if ! ssh $SSH_OPTS dev@"$VM_IP" "test -d ~/sdlc/.git" 2>/dev/null; then
+    info "Cloning sdlc repo into VM..."
+    ssh $SSH_OPTS dev@"$VM_IP" "rm -rf ~/sdlc; git clone https://github.com/danielmellado/sdlc.git ~/sdlc" 2>/dev/null || \
+        warn "Could not clone sdlc repo. Clone manually: git clone https://github.com/danielmellado/sdlc.git ~/sdlc"
+fi
+
+# --- Install nono + Claude Code CLI ---
+info "Installing nono and Claude Code CLI..."
+ssh $SSH_OPTS dev@"$VM_IP" bash -s 2>/dev/null <<'TOOLSEOF'
+export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+mkdir -p "$HOME/.local"
+
+# uv (Python package manager, needed for speckit)
+if ! command -v uv &>/dev/null; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh || echo "[!] uv install failed"
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
+# nono (kernel sandbox)
+if ! command -v nono &>/dev/null; then
+    curl -fsSL https://nono.sh/install.sh | sh || echo "[!] nono install failed"
+fi
+NONO_AUTO_MIGRATE=1 nono pull always-further/claude 2>/dev/null || true
+
+# Claude Code CLI
+if ! command -v claude &>/dev/null; then
+    npm install -g @anthropic-ai/claude-code --prefix "$HOME/.local" || echo "[!] claude install failed"
+fi
+
+# diffity (diff review)
+if ! command -v diffity &>/dev/null; then
+    npm install -g diffity --prefix "$HOME/.local" || echo "[!] diffity install failed"
+fi
+
+# speckit (spec-driven development)
+if ! command -v specify &>/dev/null; then
+    uv tool install specify-cli --from "git+https://github.com/github/spec-kit.git" || echo "[!] speckit install failed"
+fi
+
+# caveman (Claude Code plugin for token reduction)
+if command -v claude &>/dev/null; then
+    claude plugin marketplace add JuliusBrussee/caveman 2>/dev/null || true
+    claude plugin install caveman@caveman 2>/dev/null || echo "[!] caveman install failed"
+fi
+TOOLSEOF
+
+# Deploy sdlc shell integration and symlinks
+info "Deploying sdlc config..."
+ssh $SSH_OPTS dev@"$VM_IP" bash -s 2>/dev/null <<'REMOTEOF'
+if [[ -d ~/sdlc ]]; then
+    mkdir -p ~/.config ~/.local/bin
+    ln -sfn ~/sdlc/nvim ~/.config/nvim
+    ln -sf ~/sdlc/tmux/tmux.conf ~/.tmux.conf
+    ln -sf ~/sdlc/nono/scripts/nono-claude.sh ~/.local/bin/nono-claude
+    if ! grep -qF "sdlc/shell/ai-env.sh" ~/.bashrc 2>/dev/null; then
+        printf '\n# AI SDLC toolkit\nsource ~/sdlc/shell/ai-env.sh\nsource ~/sdlc/shell/ai-aliases.sh\n' >> ~/.bashrc
+    fi
+    if [[ ! -f ~/.bash_profile ]] || ! grep -qF ".bashrc" ~/.bash_profile 2>/dev/null; then
+        printf '[[ -f ~/.bashrc ]] && source ~/.bashrc\n' >> ~/.bash_profile
+    fi
+fi
+REMOTEOF
+
 info ""
-info "Cloud-init provisioning will take a few more minutes."
-info ""
-info "Monitor progress:"
-info "  virsh console $VM_NAME"
-info ""
-info "Once ready, connect with:"
-info "  ssh dev@${VM_IP}"
+info "VM ready! Connect with:"
+info "  make vm-ssh"
 info ""
 info "Tear down with:"
 info "  ./teardown-vm.sh $VM_NAME"

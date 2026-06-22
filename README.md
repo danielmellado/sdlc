@@ -10,7 +10,7 @@ PR review skills.
 ## Quick Start
 
 ```bash
-git clone git@github.com:dmellado/sdlc.git ~/Devel/openshift/sdlc
+git clone git@github.com:danielmellado/sdlc.git ~/Devel/openshift/sdlc
 cd ~/Devel/openshift/sdlc
 make install
 ```
@@ -92,12 +92,19 @@ denies access to `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.kube`, and `~/.docker`.
 
 ```bash
 cd ~/workspace/my-project
-tmux-ai .                 # default model
+tmux-ai .                 # default model, single agent
 tmux-ai . opus            # use Opus (heavy reasoning)
 tmux-ai . sonnet          # use Sonnet (fast/cheap)
+tmux-ai2 .               # nvim + 2 agents (coder + reviewer)
+tmux-ai3 .               # nvim + 3 agents (coder + reviewer + QE)
+tmux-ai3 . opus          # 3 Opus agents
 ```
 
 This opens Neovim (left) + sandboxed Claude Code (right) with agent teams enabled.
+
+`tmux-ai3` is the recommended setup for larger features: 3 coding agents working
+in parallel on implementation, review, and tests — keep each one focused on a
+single concern. Beyond 3 it becomes hard to keep up with what each agent produces.
 
 ### 2. Save tokens
 
@@ -119,16 +126,23 @@ The reconciler doesn't handle missing secrets. Fix it.
 /speckit.implement   # execute it
 ```
 
-**Parallel work** -- split the tmux pane and open another agent:
+**Parallel work** -- use `tmux-ai3` for the full team or split manually:
 
 ```bash
+tmux-ai3 .                    # nvim + 3 Claude panes (coder/reviewer/QE)
+tmux-ai2 .                    # nvim + 2 Claude panes
+
+# or split manually:
 # prefix + "  (split pane), then:
 nono-claude --model opus       # heavy reasoning agent
 nono-claude --model sonnet     # fast iteration agent
-# or just: claude-opus / claude-sonnet
 ```
 
-Tell each agent a different task. They work simultaneously.
+Tell each agent a different task. They work simultaneously. For larger features,
+the agent teams env var (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`) is enabled by
+default — Claude can spawn sub-agents for coding, reviewing, and testing in
+parallel. Keep it to ~3 sessions max; beyond that it's hard to review what each
+one produces before moving forward.
 
 ### 4. Review before committing
 
@@ -151,7 +165,7 @@ Or in Neovim: `Space gg` (git status), `Space gD` (diff view).
 | Start of session | `/caveman` | Save tokens |
 | Small fix | Just describe it | Claude does the rest |
 | Big feature | `/speckit.specify` -> `.plan` -> `.implement` | Structured approach |
-| Parallel work | New pane + `nono-claude` | Two agents at once |
+| Parallel work | `tmux-ai2` or new pane + `nono-claude` | Two agents at once |
 | Before commit | `/diffity-review` | Catch mistakes |
 | CI is red | `/triage-ci <PR>` | Auto-diagnose |
 | Review a PR | `/triage-pr <PR>` | Quick classification |

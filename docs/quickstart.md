@@ -80,6 +80,10 @@ This creates a tmux session with two panes:
 - **Left**: Neovim with your project open
 - **Right**: Claude Code, sandboxed via nono, ready for instructions
 
+Agent teams are enabled by default (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`),
+so even in this single-pane layout, Claude can internally spawn sub-agents
+to work on different parts of a task in parallel.
+
 ### Step 2: Talk to Claude
 
 Click in the right pane (or `Ctrl+b` then right arrow) and type:
@@ -171,24 +175,62 @@ export ANTHROPIC_MODEL=sonnet
 
 ## Parallel Agents
 
-Agent teams are enabled by default. You can run multiple Claude agents
-in the same tmux session:
+There are two modes for running multiple agents:
+
+### Mode 1: Agent Teams (default — single session, coordinated sub-agents)
+
+This is what you get with a regular `tmux-ai .` session. One Claude instance
+that can spawn sub-agents internally. You describe the full task and Claude
+delegates to child agents that report back.
 
 ```bash
-# Method 1: Split a pane and open another agent
-# Ctrl+b "   (split horizontally)
-nono-claude --model opus
-
-# Method 2: Use tmux-ai which sets up the layout for you
-tmux-ai . opus
+tmux-ai .                    # this already supports agent teams
+tmux-ai . opus               # with a specific model
 ```
 
-Tell each agent a different task. They coordinate automatically.
+Then tell Claude:
 
-A good pattern for a larger feature:
-- Agent 1 (Opus): architecture and core implementation
-- Agent 2 (Sonnet): writing tests
-- Agent 3 (Sonnet): documentation and cleanup
+```
+Implement <feature>. Spawn a coding agent, a test agent, and a reviewer.
+Coordinate between them.
+```
+
+The env var `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (enabled by default)
+makes this possible. Claude manages the sub-agents itself. No extra panes
+needed — it all happens within the single session.
+
+### Mode 2: Multi-pane (multiple sessions, shared coordination file)
+
+Multiple independent Claude sessions in tmux panes, coordinating via a
+shared `.claude/team-status.md` file. Best when you want direct control
+over what each agent does.
+
+```bash
+tmux-ai3 .                   # nvim + 3 agents (coder/reviewer/QE)
+tmux-ai3 . opus              # all three using Opus
+tmux-ai2 .                   # nvim + 2 agents
+```
+
+This creates a coordination file (`.claude/team-status.md`) and adds
+multi-agent instructions to `CLAUDE.md`. Each agent reads/writes the
+status file to avoid conflicts.
+
+Kick off each pane with its role:
+- Pane 1: "You are the coder. Implement X. Update team-status.md."
+- Pane 2: "You are the reviewer. Watch git changes and review them."
+- Pane 3: "You are QE. Write tests for whatever Agent 1 implements."
+
+Keep it to ~3 sessions max -- beyond that it's hard to review what
+each one produces before moving forward.
+
+### Which mode to use?
+
+| Situation | Mode | Why |
+|-----------|------|-----|
+| Large well-defined feature | Agent Teams (Mode 1) | Less manual coordination |
+| Exploratory / iterative work | Multi-pane (Mode 2) | You steer each agent directly |
+| Mixed models (opus + sonnet) | Multi-pane (Mode 2) | Each pane can run a different model |
+| Quick parallel tasks | Multi-pane (Mode 2) | Faster to spin up, no planning overhead |
 
 ## Remote Control
 

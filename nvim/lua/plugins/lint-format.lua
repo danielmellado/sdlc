@@ -36,7 +36,8 @@ return {
     event = { "BufReadPost", "BufWritePost", "InsertLeave" },
     config = function()
       local lint = require("lint")
-      lint.linters_by_ft = {
+
+      local all_linters = {
         go = { "golangcilint" },
         python = { "ruff" },
         yaml = { "yamllint" },
@@ -45,6 +46,17 @@ return {
         dockerfile = { "hadolint" },
         markdown = { "markdownlint" },
       }
+
+      -- Only register linters that are actually installed
+      for ft, linters in pairs(all_linters) do
+        local available = vim.tbl_filter(function(l)
+          local cmd = lint.linters[l] and lint.linters[l].cmd or l
+          return vim.fn.executable(cmd) == 1
+        end, linters)
+        if #available > 0 then
+          lint.linters_by_ft[ft] = available
+        end
+      end
 
       vim.api.nvim_create_autocmd({ "BufReadPost", "BufWritePost", "InsertLeave" }, {
         group = vim.api.nvim_create_augroup("NvimLint", { clear = true }),

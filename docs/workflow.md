@@ -6,24 +6,24 @@ OpenShift/Go projects.
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                        tmux                              │
-│  ┌────────────────────────┐  ┌────────────────────────┐  │
-│  │       Neovim           │  │     Claude Code CLI    │  │
-│  │                        │  │                        │  │
-│  │  ┌──────────────────┐  │  │  Sandboxed via nono.sh │  │
-│  │  │ claudecode.nvim  │◄─┼──┤  (Landlock kernel LSM) │  │
-│  │  │  (MCP bridge)    │  │  │                        │  │
-│  │  │  also sandboxed  │  │  │  Skills:               │  │
-│  │  └──────────────────┘  │  │  - /triage-ci          │  │
-│  │                        │  │  - /triage-pr          │  │
-│  │  LSP: gopls, pyright   │  │  - /review-patterns    │  │
-│  │  Lint: golangci-lint   │  │  - /caveman            │  │
-│  │  Format: conform.nvim  │  │  - /diffity-review     │  │
-│  │  Git: gitsigns,        │  │  - /speckit.*          │  │
-│  │       fugitive         │  │                        │  │
-│  └────────────────────────┘  └────────────────────────┘  │
-└──────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────── ──┐
+│                          tmux                                  │
+│  ┌────────────────────────┐  ┌─────────────────────────────┐   │
+│  │       Neovim           │  │  Claude 1 (coder)           │   │
+│  │                        │  │  Sandboxed via nono.sh      │   │
+│  │  ┌──────────────────┐  │  │  Skills: /speckit.*         │   │
+│  │  │ claudecode.nvim  │◄─┼──┤         /diffity-review     │   │
+│  │  │  (MCP bridge)    │  │  ├─────────────────────────────┤   │
+│  │  │  also sandboxed  │  │  │  Claude 2 (reviewer)        │   │
+│  │  └──────────────────┘  │  │  Skills: /review-patterns   │   │
+│  │                        │  │         /triage-pr          |   │
+│  │  LSP: gopls, pyright   │  ├─────────────────────────────┤   │
+│  │  Lint: golangci-lint   │  │  Claude 3 (QE)              │   │
+│  │  Format: conform.nvim  │  │  Skills: /triage-ci         │   │
+│  │  Git: gitsigns,        │  │         /caveman            │   │
+│  │       fugitive         │  │                             │   │
+│  └────────────────────────┘  └─────────────────────────────┘   │
+└────────────────────────────────────────────────────────────── ─┘
           │                           │
           ▼                           ▼
     ┌───────────┐            ┌────────────────┐
@@ -42,7 +42,11 @@ tmux-ai ~/Devel/openshift/my-project
 tmux-ai ~/Devel/openshift/my-project opus     # with a specific model
 tmux-ai ~/Devel/openshift/my-project sonnet   # cheaper/faster model
 
-# Option B: Just open neovim, launch Claude Code later
+# Option B: Multi-agent layout (nvim + 2 or 3 Claude panes)
+tmux-ai2 ~/Devel/openshift/my-project         # nvim + 2 agents
+tmux-ai3 ~/Devel/openshift/my-project opus    # nvim + 3 agents (coder/reviewer/QE)
+
+# Option C: Just open neovim, launch Claude Code later
 cd ~/Devel/openshift/my-project
 nvim .
 # In tmux: press prefix+a to open sandboxed Claude Code in right pane
@@ -82,15 +86,54 @@ ai-init .
 /speckit.converge    # Check progress, add remaining work
 ```
 
-For larger features, use agent teams (enabled by default) with different models:
+For larger features, there are two multi-agent modes:
+
+#### Mode 1: Agent Teams (default — single session with sub-agents)
+
+This is what `tmux-ai .` gives you out of the box. One Claude session that
+can spawn and manage sub-agents internally. You describe the feature and
+Claude delegates — a coding agent, a test agent, a reviewer — all coordinated
+through the parent.
 
 ```bash
-# In tmux, split panes and run different agents:
-nono-claude --model opus       # heavy reasoning for architecture
-nono-claude --model sonnet     # fast iteration for tests
+tmux-ai . opus
+# Then: "Implement X. Use agent teams: one coder, one reviewer, one QE."
 ```
 
-A good ratio: 3 coding agents, 1 reviewer, 1 QE agent writing tests.
+No extra panes needed — Claude manages everything within the single session.
+Best for well-defined features where you want hands-off coordination. The env
+var `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (enabled by default) powers this.
+
+#### Mode 2: Multi-pane (independent sessions with shared coordination)
+
+Multiple Claude sessions in tmux panes, each with its own role. They coordinate
+via a shared `.claude/team-status.md` file — each agent reads it before starting
+work and updates it with their status.
+
+```bash
+tmux-ai3 . opus               # nvim + 3 agents
+tmux-ai2 .                    # nvim + 2 agents
+```
+
+You steer each pane directly:
+- Pane 1: "You are the coder. Implement X. Update team-status.md."
+- Pane 2: "You are the reviewer. Watch git changes and review them."
+- Pane 3: "You are QE. Write tests for whatever Agent 1 implements."
+
+Best for exploratory work, mixed models (opus for reasoning + sonnet for
+iteration), or when you want direct control over each agent.
+
+#### Choosing between modes
+
+| Situation | Mode | Why |
+|-----------|------|-----|
+| Large well-defined feature | Agent Teams | Less manual coordination |
+| Exploratory / iterative | Multi-pane | You steer each agent |
+| Mixed models (opus + sonnet) | Multi-pane | Different model per pane |
+| Quick parallel tasks | Multi-pane | No planning overhead |
+
+In both cases, keep it to ~3 agents max. Beyond that it becomes hard to review
+what each one produces before moving forward.
 
 ### 3. Reviewing Generated Code
 
@@ -211,7 +254,9 @@ Press `Space` and wait for the which-key menu to see all available groups.
 
 | Command | Action |
 |---------|--------|
-| `tmux-ai <dir> [model]` | Open AI tmux session (optional model: opus, sonnet, haiku) |
+| `tmux-ai <dir> [model]` | Open AI tmux session (nvim + 1 agent) |
+| `tmux-ai2 <dir> [model]` | nvim + 2 agents (coder + reviewer) |
+| `tmux-ai3 <dir> [model]` | nvim + 3 agents (coder + reviewer + QE) |
 | `nono-claude` | Launch sandboxed Claude Code |
 | `nono-claude --model opus` | Sandboxed Claude with specific model |
 | `nono-claude --rc` | Sandboxed Claude with Remote Control (browser access) |

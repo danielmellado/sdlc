@@ -1,29 +1,24 @@
 return {
-  -- File explorer
+  -- File explorer (nvim-tree: lightweight, SSH-friendly)
   {
-    "nvim-neo-tree/neo-tree.nvim",
-    branch = "v3.x",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-      "nvim-tree/nvim-web-devicons",
-      "MunifTanjim/nui.nvim",
-    },
+    "nvim-tree/nvim-tree.lua",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
     keys = {
-      { "<C-n>", "<cmd>Neotree toggle<CR>", desc = "Toggle file explorer" },
-      { "<leader>fe", "<cmd>Neotree reveal<CR>", desc = "Reveal file in explorer" },
+      { "<C-n>", "<cmd>NvimTreeToggle<CR>", desc = "Toggle file explorer" },
+      { "<leader>fe", "<cmd>NvimTreeFindFile<CR>", desc = "Reveal file in explorer" },
     },
     opts = {
-      close_if_last_window = true,
-      filesystem = {
-        filtered_items = {
-          hide_dotfiles = false,
-          hide_by_name = { ".git", "__pycache__", "node_modules" },
-          hide_by_pattern = { "*.pyc" },
-        },
-        follow_current_file = { enabled = true },
-        use_libuv_file_watcher = true,
+      filters = {
+        dotfiles = false,
+        custom = { ".git", "__pycache__", "node_modules", ".agents", ".claude" },
       },
-      window = { width = 30 },
+      view = { width = 30 },
+      renderer = {
+        group_empty = true,
+        icons = { show = { git = true, folder = true, file = true } },
+      },
+      update_focused_file = { enable = true },
+      git = { enable = true, ignore = false },
     },
   },
 

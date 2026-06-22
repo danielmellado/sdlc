@@ -4,17 +4,26 @@
 set -euo pipefail
 
 export HOME="/home/dev"
-export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$HOME/.local/bin:/usr/local/bin:$PATH"
+hash -r
 cd "$HOME"
+
+# Ensure npm is available (bundled with nodejs on Fedora 42+, but install if missing)
+if ! command -v npm &>/dev/null; then
+    echo "[+] npm not found, installing via dnf..."
+    sudo dnf install -y nodejs-npm 2>/dev/null || sudo dnf install -y npm 2>/dev/null || true
+fi
 
 echo "=== AI SDLC VM Provisioning ==="
 
 # --- Clone the sdlc repo ---
-if [[ ! -d "$HOME/sdlc" ]]; then
+# Note: this may fail if the repo is private and gh auth hasn't been injected yet.
+# create-vm.sh will retry after injecting credentials.
+if [[ ! -d "$HOME/sdlc/.git" ]]; then
     echo "[+] Cloning sdlc repo..."
-    git clone https://github.com/dmellado/sdlc.git "$HOME/sdlc" 2>/dev/null || {
-        echo "[!] Could not clone from GitHub, copying from /opt if available"
-        mkdir -p "$HOME/sdlc"
+    git clone https://github.com/danielmellado/sdlc.git "$HOME/sdlc" 2>/dev/null || {
+        echo "[!] Could not clone sdlc repo (will be retried after credential injection)"
+        rm -rf "$HOME/sdlc"
     }
 fi
 
@@ -28,7 +37,7 @@ fi
 # --- Install nono (kernel sandbox) ---
 if ! command -v nono &>/dev/null; then
     echo "[+] Installing nono..."
-    cargo install nono-cli 2>/dev/null || echo "[!] nono install failed, may need manual install"
+    curl -fsSL https://nono.sh/install.sh | sh 2>/dev/null || echo "[!] nono install failed, may need manual install"
 fi
 
 # --- Pull nono's built-in Claude profile (needed by extends: "claude-code") ---
@@ -84,6 +93,13 @@ if ! grep -qF "sdlc/shell/ai-env.sh" "$HOME/.bashrc" 2>/dev/null; then
 source ~/sdlc/shell/ai-env.sh
 source ~/sdlc/shell/ai-aliases.sh
 BASHEOF
+fi
+
+# Ensure login shells source .bashrc (Fedora cloud images don't always do this)
+if [[ ! -f "$HOME/.bash_profile" ]] || ! grep -qF ".bashrc" "$HOME/.bash_profile" 2>/dev/null; then
+    cat >> "$HOME/.bash_profile" <<'PROFILEEOF'
+[[ -f ~/.bashrc ]] && source ~/.bashrc
+PROFILEEOF
 fi
 
 # --- Set up workspace directory ---

@@ -17,10 +17,14 @@
       "/etc/resolv.conf",
       "/etc/hosts",
       "/tmp",
-      "$HOME/.config/gcloud"
+      "$HOME/.config/gcloud",
+      "$HOME/.gitconfig"
     ],
     "write": [
       "/tmp"
+    ],
+    "allow": [
+      "$HOME/.diffity"
     ]
   },
   "network": {
@@ -30,6 +34,7 @@
       "oauth2.googleapis.com",
       "accounts.google.com",
       "www.googleapis.com"
-    ]
+    ],
+    "open_port": [5391, 8391]
   }
 }

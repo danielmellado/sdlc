@@ -45,8 +45,8 @@ vm-ssh: ## SSH into the VM (auto-discovers IP)
 	@MAC=$$(virsh domiflist $(VM_NAME) 2>/dev/null | awk '/virtio/{print $$5}'); \
 	IP=$$(virsh net-dhcp-leases default 2>/dev/null | grep "$$MAC" | grep -oP '\d+\.\d+\.\d+\.\d+' | head -1); \
 	if [ -z "$$IP" ]; then echo "No IP found. Is the VM running?"; exit 1; fi; \
-	echo "Connecting to dev@$$IP..."; \
-	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null dev@$$IP
+	echo "Connecting to dev@$$IP (diffity on http://localhost:5391 when running)..."; \
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -L 5391:localhost:5391 dev@$$IP
 
 vm-status: ## Show VM status and IP
 	@virsh dominfo $(VM_NAME) 2>/dev/null || echo "VM '$(VM_NAME)' does not exist."
