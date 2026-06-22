@@ -49,6 +49,6 @@ fi
 
 exec nono run \
     --profile "$PROFILE" \
-    --allow-cwd \
+    --allow . \
     "${NONO_ARGS[@]}" \
     -- claude "${CLAUDE_ARGS[@]}"

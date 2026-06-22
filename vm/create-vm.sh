@@ -243,6 +243,28 @@ if [[ -f "$HOME/.config/gh/hosts.yml" ]]; then
     scp $SSH_OPTS "$HOME/.config/gh/hosts.yml" dev@"$VM_IP":~/.config/gh/hosts.yml 2>/dev/null
 fi
 
+# Google Cloud / Vertex AI credentials (needed for Claude Code via Vertex)
+if [[ -d "$HOME/.config/gcloud" ]]; then
+    info "  -> gcloud credentials (~/.config/gcloud/)"
+    ssh $SSH_OPTS dev@"$VM_IP" "mkdir -p ~/.config/gcloud" 2>/dev/null
+    rsync -az -e "ssh $SSH_OPTS" \
+        --include='credentials.db' --include='access_tokens.db' \
+        --include='application_default_credentials.json' \
+        --include='active_config' --include='configurations/***' \
+        --include='default_configs.db' --exclude='*' \
+        "$HOME/.config/gcloud/" dev@"$VM_IP":~/.config/gcloud/ 2>/dev/null
+fi
+
+# Vertex AI environment variables
+VERTEX_VARS=""
+[[ -n "${CLAUDE_CODE_USE_VERTEX:-}" ]] && VERTEX_VARS+="export CLAUDE_CODE_USE_VERTEX=${CLAUDE_CODE_USE_VERTEX}\n"
+[[ -n "${CLOUD_ML_REGION:-}" ]] && VERTEX_VARS+="export CLOUD_ML_REGION=${CLOUD_ML_REGION}\n"
+[[ -n "${ANTHROPIC_VERTEX_PROJECT_ID:-}" ]] && VERTEX_VARS+="export ANTHROPIC_VERTEX_PROJECT_ID=${ANTHROPIC_VERTEX_PROJECT_ID}\n"
+if [[ -n "$VERTEX_VARS" ]]; then
+    info "  -> Vertex AI env vars"
+    ssh $SSH_OPTS dev@"$VM_IP" "grep -q CLAUDE_CODE_USE_VERTEX ~/.bashrc 2>/dev/null || printf '${VERTEX_VARS}' >> ~/.bashrc" 2>/dev/null
+fi
+
 info ""
 info "Cloud-init provisioning will take a few more minutes."
 info ""

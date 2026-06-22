@@ -35,6 +35,16 @@ fi
 echo "[+] Pulling nono claude profile..."
 NONO_AUTO_MIGRATE=1 nono pull always-further/claude 2>/dev/null || echo "[!] nono profile pull failed"
 
+# --- Install gcloud CLI (needed for Vertex AI auth) ---
+if ! command -v gcloud &>/dev/null; then
+    echo "[+] Installing gcloud CLI..."
+    curl -sSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="$HOME" 2>/dev/null || echo "[!] gcloud install failed"
+    export PATH="$HOME/google-cloud-sdk/bin:$PATH"
+    if ! grep -qF "google-cloud-sdk" "$HOME/.bashrc" 2>/dev/null; then
+        echo 'export PATH="$HOME/google-cloud-sdk/bin:$PATH"' >> "$HOME/.bashrc"
+    fi
+fi
+
 # --- Install Claude Code CLI ---
 if ! command -v claude &>/dev/null; then
     echo "[+] Installing Claude Code CLI..."

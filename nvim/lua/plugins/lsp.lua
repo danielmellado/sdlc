@@ -10,7 +10,10 @@ return {
   -- Bridge between mason and lspconfig
   {
     "williamboman/mason-lspconfig.nvim",
-    dependencies = { "williamboman/mason.nvim" },
+    dependencies = {
+      "williamboman/mason.nvim",
+      "neovim/nvim-lspconfig",
+    },
     opts = {
       ensure_installed = {
         "gopls",
@@ -20,43 +23,35 @@ return {
         "yamlls",
         "bashls",
       },
+      automatic_enable = true,
     },
   },
 
-  -- LSP config
+  -- nvim-lspconfig provides server definitions for vim.lsp.config
   {
     "neovim/nvim-lspconfig",
+    lazy = true,
+  },
+
+  -- cmp-nvim-lsp capabilities + keymaps + per-server config
+  {
+    "hrsh7th/cmp-nvim-lsp",
     event = { "BufReadPre", "BufNewFile" },
     dependencies = {
       "williamboman/mason.nvim",
       "williamboman/mason-lspconfig.nvim",
-      "hrsh7th/cmp-nvim-lsp",
+      "neovim/nvim-lspconfig",
     },
     config = function()
-      local lspconfig = require("lspconfig")
       local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-      local on_attach = function(_, bufnr)
-        local map = function(keys, func, desc)
-          vim.keymap.set("n", keys, func, { buffer = bufnr, desc = desc })
-        end
-
-        map("gd", vim.lsp.buf.definition, "Go to definition")
-        map("gD", vim.lsp.buf.declaration, "Go to declaration")
-        map("gr", vim.lsp.buf.references, "References")
-        map("gi", vim.lsp.buf.implementation, "Go to implementation")
-        map("K", vim.lsp.buf.hover, "Hover documentation")
-        map("<leader>la", vim.lsp.buf.code_action, "Code action")
-        map("<leader>lr", vim.lsp.buf.rename, "Rename symbol")
-        map("<leader>ls", vim.lsp.buf.signature_help, "Signature help")
-        map("<leader>lf", function() vim.lsp.buf.format({ async = true }) end, "Format buffer")
-        map("<leader>lt", vim.lsp.buf.type_definition, "Type definition")
-      end
-
-      -- Go
-      lspconfig.gopls.setup({
+      -- Apply completion capabilities to all servers
+      vim.lsp.config("*", {
         capabilities = capabilities,
-        on_attach = on_attach,
+      })
+
+      -- Per-server configuration
+      vim.lsp.config("gopls", {
         settings = {
           gopls = {
             analyses = {
@@ -70,16 +65,7 @@ return {
         },
       })
 
-      -- Python
-      lspconfig.pyright.setup({
-        capabilities = capabilities,
-        on_attach = on_attach,
-      })
-
-      -- Rust
-      lspconfig.rust_analyzer.setup({
-        capabilities = capabilities,
-        on_attach = on_attach,
+      vim.lsp.config("rust_analyzer", {
         settings = {
           ["rust-analyzer"] = {
             checkOnSave = { command = "clippy" },
@@ -87,10 +73,7 @@ return {
         },
       })
 
-      -- Lua (for neovim config editing)
-      lspconfig.lua_ls.setup({
-        capabilities = capabilities,
-        on_attach = on_attach,
+      vim.lsp.config("lua_ls", {
         settings = {
           Lua = {
             runtime = { version = "LuaJIT" },
@@ -104,10 +87,7 @@ return {
         },
       })
 
-      -- YAML
-      lspconfig.yamlls.setup({
-        capabilities = capabilities,
-        on_attach = on_attach,
+      vim.lsp.config("yamlls", {
         settings = {
           yaml = {
             schemas = {
@@ -118,10 +98,25 @@ return {
         },
       })
 
-      -- Bash
-      lspconfig.bashls.setup({
-        capabilities = capabilities,
-        on_attach = on_attach,
+      -- LSP keymaps (applied when any server attaches)
+      vim.api.nvim_create_autocmd("LspAttach", {
+        group = vim.api.nvim_create_augroup("sdlc-lsp-keymaps", { clear = true }),
+        callback = function(ev)
+          local map = function(keys, func, desc)
+            vim.keymap.set("n", keys, func, { buffer = ev.buf, desc = desc })
+          end
+
+          map("gd", vim.lsp.buf.definition, "Go to definition")
+          map("gD", vim.lsp.buf.declaration, "Go to declaration")
+          map("gr", vim.lsp.buf.references, "References")
+          map("gi", vim.lsp.buf.implementation, "Go to implementation")
+          map("K", vim.lsp.buf.hover, "Hover documentation")
+          map("<leader>la", vim.lsp.buf.code_action, "Code action")
+          map("<leader>lr", vim.lsp.buf.rename, "Rename symbol")
+          map("<leader>ls", vim.lsp.buf.signature_help, "Signature help")
+          map("<leader>lf", function() vim.lsp.buf.format({ async = true }) end, "Format buffer")
+          map("<leader>lt", vim.lsp.buf.type_definition, "Type definition")
+        end,
       })
     end,
   },

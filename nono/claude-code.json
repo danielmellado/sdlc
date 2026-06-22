@@ -16,19 +16,20 @@
       "/etc/pki",
       "/etc/resolv.conf",
       "/etc/hosts",
-      "/tmp"
+      "/tmp",
+      "$HOME/.config/gcloud"
     ],
     "write": [
       "/tmp"
-    ],
-    "deny": [
-      "~/.ssh",
-      "~/.aws",
-      "~/.config/gh",
-      "~/.gnupg",
-      "~/.netrc",
-      "~/.kube/config",
-      "~/.docker/config.json"
+    ]
+  },
+  "network": {
+    "allow_domain": [
+      "aiplatform.googleapis.com",
+      "us-east5-aiplatform.googleapis.com",
+      "oauth2.googleapis.com",
+      "accounts.google.com",
+      "www.googleapis.com"
     ]
   }
 }
