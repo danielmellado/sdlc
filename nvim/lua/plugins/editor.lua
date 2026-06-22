@@ -1,0 +1,114 @@
+return {
+  -- File explorer
+  {
+    "nvim-neo-tree/neo-tree.nvim",
+    branch = "v3.x",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "nvim-tree/nvim-web-devicons",
+      "MunifTanjim/nui.nvim",
+    },
+    keys = {
+      { "<C-n>", "<cmd>Neotree toggle<CR>", desc = "Toggle file explorer" },
+      { "<leader>fe", "<cmd>Neotree reveal<CR>", desc = "Reveal file in explorer" },
+    },
+    opts = {
+      close_if_last_window = true,
+      filesystem = {
+        filtered_items = {
+          hide_dotfiles = false,
+          hide_by_name = { ".git", "__pycache__", "node_modules" },
+          hide_by_pattern = { "*.pyc" },
+        },
+        follow_current_file = { enabled = true },
+        use_libuv_file_watcher = true,
+      },
+      window = { width = 30 },
+    },
+  },
+
+  -- Fuzzy finder
+  {
+    "nvim-telescope/telescope.nvim",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+    },
+    keys = {
+      { "<leader>ff", "<cmd>Telescope find_files<CR>", desc = "Find files" },
+      { "<leader>fg", "<cmd>Telescope live_grep<CR>", desc = "Live grep" },
+      { "<leader>fb", "<cmd>Telescope buffers<CR>", desc = "Buffers" },
+      { "<leader>fh", "<cmd>Telescope help_tags<CR>", desc = "Help tags" },
+      { "<leader>fr", "<cmd>Telescope oldfiles<CR>", desc = "Recent files" },
+      { "<leader>fd", "<cmd>Telescope diagnostics<CR>", desc = "Diagnostics" },
+      { "<leader>fs", "<cmd>Telescope lsp_document_symbols<CR>", desc = "Document symbols" },
+      { "<leader>fw", "<cmd>Telescope lsp_workspace_symbols<CR>", desc = "Workspace symbols" },
+      { "<leader>gc", "<cmd>Telescope git_commits<CR>", desc = "Git commits" },
+      { "<leader>gs", "<cmd>Telescope git_status<CR>", desc = "Git status" },
+    },
+    config = function()
+      local telescope = require("telescope")
+      telescope.setup({
+        defaults = {
+          file_ignore_patterns = { "%.git/", "node_modules/", "vendor/" },
+          layout_strategy = "horizontal",
+          layout_config = { prompt_position = "top" },
+          sorting_strategy = "ascending",
+        },
+        pickers = {
+          find_files = { hidden = true },
+        },
+      })
+      telescope.load_extension("fzf")
+    end,
+  },
+
+  -- Which-key for discoverability
+  {
+    "folke/which-key.nvim",
+    event = "VeryLazy",
+    opts = {
+      spec = {
+        { "<leader>f", group = "find" },
+        { "<leader>g", group = "git" },
+        { "<leader>l", group = "lsp" },
+        { "<leader>a", group = "ai" },
+      },
+    },
+  },
+
+  -- Auto-pairs
+  {
+    "echasnovski/mini.pairs",
+    event = "InsertEnter",
+    opts = {},
+  },
+
+  -- Surround operations
+  {
+    "echasnovski/mini.surround",
+    event = { "BufReadPost", "BufNewFile" },
+    opts = {},
+  },
+
+  -- Comment toggling
+  {
+    "numToStr/Comment.nvim",
+    keys = {
+      { "gcc", mode = "n", desc = "Toggle line comment" },
+      { "gc", mode = "v", desc = "Toggle comment" },
+    },
+    opts = {},
+  },
+
+  -- Symbols outline
+  {
+    "hedyhli/outline.nvim",
+    keys = {
+      { "<F3>", "<cmd>Outline<CR>", desc = "Toggle symbols outline" },
+    },
+    opts = {
+      outline_window = { width = 30, auto_close = true },
+    },
+  },
+}

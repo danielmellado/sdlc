@@ -1,0 +1,15 @@
+# Neovim
+nvim/plugin/
+nvim/lazy-lock.json
+
+# OS
+.DS_Store
+*~
+*.swp
+*.swo
+
+# Secrets
+*.key
+*.pem
+.env
+.env.local

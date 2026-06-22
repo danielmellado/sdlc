@@ -1,0 +1,56 @@
+{
+  "name": "claude-code",
+  "description": "Sandbox profile for Claude Code CLI on Fedora with Landlock enforcement",
+  "filesystem": {
+    "allow_read": [
+      "/usr",
+      "/lib",
+      "/lib64",
+      "/etc/ssl",
+      "/etc/pki",
+      "/etc/resolv.conf",
+      "/etc/hosts",
+      "/proc/self",
+      "/dev/null",
+      "/dev/urandom",
+      "/tmp"
+    ],
+    "allow_write": [
+      "/tmp"
+    ],
+    "deny": [
+      "~/.ssh",
+      "~/.aws",
+      "~/.config/gh",
+      "~/.gnupg",
+      "~/.netrc",
+      "~/.kube/config",
+      "~/.docker/config.json"
+    ]
+  },
+  "network": {
+    "allow_domains": [
+      "api.anthropic.com",
+      "statsig.anthropic.com",
+      "sentry.io",
+      "registry.npmjs.org",
+      "github.com",
+      "api.github.com",
+      "objects.githubusercontent.com",
+      "proxy.golang.org",
+      "sum.golang.org",
+      "pypi.org",
+      "files.pythonhosted.org",
+      "crates.io",
+      "static.crates.io"
+    ]
+  },
+  "commands": {
+    "deny": [
+      "rm -rf /",
+      "dd",
+      "mkfs",
+      "chmod -R 777"
+    ]
+  }
+}
