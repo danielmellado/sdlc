@@ -15,6 +15,8 @@ return {
       },
     },
     opts = {
+      terminal_cmd = (os.getenv("SDLC_ROOT") or (os.getenv("HOME") .. "/sdlc"))
+        .. "/nono/scripts/nono-claude.sh",
       auto_start = true,
       terminal = {
         split_side = "right",

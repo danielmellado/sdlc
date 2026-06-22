@@ -6,29 +6,30 @@ OpenShift/Go projects.
 ## Architecture
 
 ```
-┌───────────────────────────────────────────────────── ─ ───┐
-│                        tmux                               │
-│  ┌───────────────────── ─┐  ┌─────────────────────── ──┐  │
-│  │       Neovim          │  │     Claude Code CLI      │  │
-│  │                       │  │                          │  │
-│  │  ┌────────────── ──┐  │  │  Sandboxed via nono.sh   │  │
-│  │  │ claudecode.nvim │◄─┼──┤  (Landlock kernel LSM)   │  │
-│  │  │  (MCP bridge)   │  │  │                          │  │
-│  │  └────────────────┘   │  │  Skills:                 │  │
-│  │                       │  │  - /triage-ci            │  │
-│  │  LSP: gopls, pyright  │  │  - /triage-pr            │  │
-│  │  Lint: golangci-lint  │  │  - /review-patterns      │  │
-│  │  Format: conform.nvim │  │  - /caveman              │  │
-│  │  Git: gitsigns,       │  │  - /diffity-review       │  │
-│  │       fugitive        │  │  - /speckit.*            │  │
-│  └─────────────────── ───┘  └─────────────────────── ──┘  │
-└─────────────────────────────────────────────────────  ────┘
+┌──────────────────────────────────────────────────────────┐
+│                        tmux                              │
+│  ┌────────────────────────┐  ┌────────────────────────┐  │
+│  │       Neovim           │  │     Claude Code CLI    │  │
+│  │                        │  │                        │  │
+│  │  ┌──────────────────┐  │  │  Sandboxed via nono.sh │  │
+│  │  │ claudecode.nvim  │◄─┼──┤  (Landlock kernel LSM) │  │
+│  │  │  (MCP bridge)    │  │  │                        │  │
+│  │  │  also sandboxed  │  │  │  Skills:               │  │
+│  │  └──────────────────┘  │  │  - /triage-ci          │  │
+│  │                        │  │  - /triage-pr          │  │
+│  │  LSP: gopls, pyright   │  │  - /review-patterns    │  │
+│  │  Lint: golangci-lint   │  │  - /caveman            │  │
+│  │  Format: conform.nvim  │  │  - /diffity-review     │  │
+│  │  Git: gitsigns,        │  │  - /speckit.*          │  │
+│  │       fugitive         │  │                        │  │
+│  └────────────────────────┘  └────────────────────────┘  │
+└──────────────────────────────────────────────────────────┘
           │                           │
           ▼                           ▼
-    ┌───────────┐            ┌─────────  ─────┐
+    ┌───────────┐            ┌────────────────┐
     │  diffity  │            │ gh-ci-artifacts│
     │ (browser) │            │   (CI logs)    │
-    └───────────┘            └───────────  ───┘
+    └───────────┘            └────────────────┘
 ```
 
 ## Daily Workflow
@@ -44,8 +45,8 @@ tmux-ai ~/Devel/openshift/my-project sonnet   # cheaper/faster model
 # Option B: Just open neovim, launch Claude Code later
 cd ~/Devel/openshift/my-project
 nvim .
-# In tmux: press prefix+S to open sandboxed Claude Code in right pane
-# Or prefix+C for an unsandboxed session (escape hatch)
+# In tmux: press prefix+a to open sandboxed Claude Code in right pane
+# Or prefix+u for an unsandboxed session (escape hatch)
 ```
 
 `tmux-ai` always launches Claude Code inside a nono sandbox by default.
@@ -60,9 +61,10 @@ claude-haiku               # sandboxed Haiku
 nono-claude --model opus   # equivalent long form
 ```
 
-Inside neovim, `<leader>ac` also opens Claude Code via `claudecode.nvim`.
-Claude Code can read your open buffers, see diagnostics, and show diffs
-directly in neovim via the MCP WebSocket bridge.
+Inside Neovim, `<leader>ac` (Space a c) also opens Claude Code via
+`claudecode.nvim`. This too launches through `nono-claude.sh`, so it is
+sandboxed. Claude Code can read your open buffers, see diagnostics, and
+show diffs directly in Neovim via the MCP WebSocket bridge.
 
 ### 2. Adding a New Feature (Spec-Driven)
 
@@ -162,40 +164,48 @@ Kubernetes-specific patterns (RBAC, deep-copy, finalizers), and test quality.
 
 ## Keybindings Reference
 
-### Neovim
+### Neovim (leader = Space)
 
 | Key | Action |
 |-----|--------|
-| `<Space>` | Leader key |
-| `<leader>ac` | Open Claude Code |
-| `<leader>ab` | Add current buffer to Claude |
-| `<leader>as` (visual) | Send selection to Claude |
-| `<leader>ff` | Find files (Telescope) |
-| `<leader>fg` | Live grep (Telescope) |
-| `<leader>fb` | Buffers (Telescope) |
-| `<leader>fs` | Document symbols |
-| `<C-n>` | Toggle file explorer (Neo-tree) |
-| `<F3>` | Toggle symbols outline |
+| `Space a c` | Open Claude Code (sandboxed via nono) |
+| `Space a b` | Add current buffer to Claude context |
+| `Space a s` (visual) | Send selection to Claude |
+| `Space f f` | Find files (Telescope) |
+| `Space f g` | Live grep (Telescope) |
+| `Space f b` | Buffers (Telescope) |
+| `Space f s` | Document symbols |
+| `Ctrl+n` | Toggle file explorer (Neo-tree) |
+| `F3` | Toggle symbols outline |
 | `gd` | Go to definition |
 | `gr` | References |
 | `K` | Hover documentation |
-| `<leader>la` | Code action |
-| `<leader>lr` | Rename symbol |
-| `<leader>lf` | Format buffer |
-| `<leader>gg` | Git status (fugitive) |
-| `<leader>gb` | Git blame |
-| `<leader>gD` | Diffview open |
+| `Space l a` | Code action |
+| `Space l r` | Rename symbol |
+| `Space l f` | Format buffer |
+| `Space g g` | Git status (fugitive) |
+| `Space g b` | Git blame |
+| `Space g D` | Diffview open |
 | `]h` / `[h` | Next/previous git hunk |
 | `]d` / `[d` | Next/previous diagnostic |
+| `Space w` | Save file |
+| `Space e` | Show diagnostic popup |
 
-### tmux
+Press `Space` and wait for the which-key menu to see all available groups.
+
+### tmux (prefix = Ctrl+b)
 
 | Key | Action |
 |-----|--------|
-| `prefix + C` | Open Claude Code in right pane |
-| `prefix + S` | Open sandboxed Claude Code (nono) |
-| `prefix + A` | Full AI layout (nvim left, Claude right) |
-| `prefix + e` | Toggle broadcast to all panes |
+| `prefix a` | Open sandboxed Claude Code in right pane |
+| `prefix A` | Full AI layout (nvim left, sandboxed Claude right) |
+| `prefix u` | Open unsandboxed Claude Code (escape hatch) |
+| `prefix e` | Toggle broadcast to all panes |
+| `prefix c` | New tmux window (tmux default) |
+| `prefix "` | Split pane horizontally |
+| `prefix %` | Split pane vertically |
+| `prefix arrows` | Move between panes |
+| `prefix 0-9` | Switch to window by number |
 
 ### Shell
 
@@ -216,12 +226,16 @@ Kubernetes-specific patterns (RBAC, deep-copy, finalizers), and test quality.
 nono.sh uses Landlock LSM (Linux kernel 6.7+) to enforce:
 
 - **Filesystem**: Claude Code can only access the current working directory
-  and explicitly allowed paths. `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.kube`
-  are blocked by default.
-- **Network**: Only allowed domains (Anthropic API, GitHub, package registries)
-  can be contacted. No data exfiltration possible.
+  and explicitly allowed paths. `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.kube`,
+  `~/.docker` are blocked by default.
+- **Network**: Extends the built-in `claude-code` network profile (Anthropic
+  API, GitHub, package registries). No data exfiltration possible.
 - **Irrevocable**: Once applied, the sandbox cannot be loosened, even by the
   sandboxed process itself.
+
+The profile (`nono/claude-code.json`) extends nono's built-in `claude-code`
+profile and is used by every entry point: `tmux-ai`, tmux keybindings,
+Neovim's claudecode.nvim, and the shell aliases.
 
 Zero startup overhead and no image management, while maintaining strong
 kernel-level isolation.
@@ -256,4 +270,6 @@ tmux-ai . opus            # start working with Opus
 ```
 
 The VM comes pre-configured with all tools, configs, and your Claude/git auth
-copied from the host. See [../vm/README.md](../vm/README.md) for details.
+copied from the host. GOTOOLCHAIN=auto is set so tools like gopls
+auto-download the Go version they need. See [../vm/README.md](../vm/README.md)
+for details.

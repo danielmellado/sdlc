@@ -31,6 +31,10 @@ if ! command -v nono &>/dev/null; then
     cargo install nono-cli 2>/dev/null || echo "[!] nono install failed, may need manual install"
 fi
 
+# --- Pull nono's built-in Claude profile (needed by extends: "claude-code") ---
+echo "[+] Pulling nono claude profile..."
+NONO_AUTO_MIGRATE=1 nono pull always-further/claude 2>/dev/null || echo "[!] nono profile pull failed"
+
 # --- Install Claude Code CLI ---
 if ! command -v claude &>/dev/null; then
     echo "[+] Installing Claude Code CLI..."

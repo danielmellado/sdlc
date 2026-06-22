@@ -5,6 +5,8 @@ OpenShift/Go projects: neovim config, tmux setup, nono.sh sandbox profiles,
 Claude Code CLI integration, speckit/diffity/caveman tooling, CI triage, and
 PR review skills.
 
+**New here?** Start with the [Quickstart Guide](docs/quickstart.md).
+
 ## Quick Start
 
 ```bash
@@ -45,7 +47,7 @@ copied from the host. See [vm/README.md](vm/README.md) for details.
 | `tools/` | Installation scripts for all external tools |
 | `skills/` | Claude Code custom skills for CI triage, PR triage, and code review |
 | `vm/` | VM provisioning scripts (libvirt/cloud-init) for clean environments |
-| `docs/` | Workflow documentation |
+| `docs/` | [Quickstart](docs/quickstart.md) and [workflow reference](docs/workflow.md) |
 
 ## Toolchain
 
@@ -64,9 +66,25 @@ copied from the host. See [vm/README.md](vm/README.md) for details.
 - Fedora 44+ (kernel 6.7+ for full Landlock fs+network sandboxing)
 - Neovim >= 0.10.0
 - Node.js >= 20 (for Claude Code CLI, diffity)
+- Go (GOTOOLCHAIN=auto is set, so tools like gopls auto-download the required version)
 - Python 3.11+ with uv (for speckit)
 - tmux
 - gh (GitHub CLI)
+
+## Sandboxing
+
+**Everything runs sandboxed by default.** There is no unsandboxed Claude unless
+you explicitly ask for it.
+
+- `tmux-ai` launches Claude Code through `nono-claude.sh`
+- `prefix+a` in tmux launches a sandboxed Claude pane
+- `Space a c` in Neovim launches Claude through the same `nono-claude.sh` wrapper
+- Shell aliases (`claude-opus`, `claude-sonnet`, `claude-haiku`) are all sandboxed
+
+The only escape hatch is `prefix+u` in tmux or running `claude` directly.
+
+The nono profile extends the built-in `claude-code` profile and additionally
+denies access to `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.kube`, and `~/.docker`.
 
 ## Workflow
 
@@ -118,7 +136,7 @@ Tell each agent a different task. They work simultaneously.
 /diffity-review      # Claude reviews its own diff
 ```
 
-Or in Neovim: `Space+gg` (git status), `Space+gD` (diff view).
+Or in Neovim: `Space gg` (git status), `Space gD` (diff view).
 
 ### 5. Triage CI failures
 
@@ -139,6 +157,7 @@ Or in Neovim: `Space+gg` (git status), `Space+gD` (diff view).
 | Review a PR | `/triage-pr <PR>` | Quick classification |
 
 For the full reference, see [docs/workflow.md](docs/workflow.md).
+For a guided introduction, see [docs/quickstart.md](docs/quickstart.md).
 
 ### Remote Control (browser access)
 
@@ -153,8 +172,8 @@ Requires Claude Max subscription. The session stays on the VM; the browser is ju
 
 ### Escape hatches
 
-- `tmux-ai` always uses nono (sandboxed). For unsandboxed Claude: run `claude` directly
-- tmux `prefix+S` = sandboxed pane, `prefix+C` = unsandboxed pane
+- Everything uses nono (sandboxed) by default: `tmux-ai`, `prefix+a`, `prefix+A`, Neovim `<leader>ac`
+- For unsandboxed Claude: `prefix+u` or run `claude` directly
 
 ## License
 
