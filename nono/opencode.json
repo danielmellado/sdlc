@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "name": "sdlc-opencode",
+    "description": "OpenCode sandbox for AI SDLC workflow"
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "filesystem": {
+    "read": [
+      "/usr",
+      "/lib",
+      "/lib64",
+      "/etc/ssl",
+      "/etc/pki",
+      "/etc/resolv.conf",
+      "/etc/hosts",
+      "/etc/containers",
+      "/tmp",
+      "$HOME/.local/bin",
+      "$HOME/.local/lib/node_modules",
+      "$HOME/.config/opencode",
+      "$HOME/.local/share/opencode",
+      "$HOME/.bashrc",
+      "$HOME/.gitconfig",
+      "$HOME/.config/gcloud",
+      "$HOME/.ollama",
+      "$HOME/sdlc"
+    ],
+    "write": [
+      "/tmp",
+      "$HOME/.local/share/opencode",
+      "$HOME/.config/opencode"
+    ],
+    "allow": [
+      "$HOME/.diffity",
+      "/dev/pts"
+    ]
+  },
+  "network": {
+    "allow_domain": [
+      "api.anthropic.com",
+      "api.openai.com",
+      "opencode.ai",
+      "api.opencode.ai",
+      "generativelanguage.googleapis.com",
+      "aiplatform.googleapis.com",
+      "undefined-aiplatform.googleapis.com",
+      "global-aiplatform.googleapis.com",
+      "us-east5-aiplatform.googleapis.com",
+      "us-central1-aiplatform.googleapis.com",
+      "us-east4-aiplatform.googleapis.com",
+      "europe-west1-aiplatform.googleapis.com",
+      "europe-west4-aiplatform.googleapis.com",
+      "oauth2.googleapis.com",
+      "accounts.google.com",
+      "www.googleapis.com",
+      "quay.io",
+      "cdn.quay.io",
+      "cdn01.quay.io",
+      "cdn02.quay.io",
+      "cdn03.quay.io",
+      "access.redhat.com",
+      "registry.redhat.io",
+      "api.github.com",
+      "github.com",
+      "registry.npmjs.org",
+      "proxy.golang.org",
+      "pypi.org",
+      "files.pythonhosted.org",
+      "crates.io",
+      "static.crates.io"
+    ],
+    "open_port": [5391, 8391, 11434]
+  }
+}

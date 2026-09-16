@@ -31,6 +31,7 @@ clean: ## Remove symlinks (does not uninstall tools)
 	@rm -f $(HOME)/.config/nvim 2>/dev/null || true
 	@rm -f $(HOME)/.tmux.conf 2>/dev/null || true
 	@rm -f $(HOME)/.local/bin/nono-claude 2>/dev/null || true
+	@rm -f $(HOME)/.local/bin/nono-opencode 2>/dev/null || true
 	@echo "Done. Shell sources in .bashrc must be removed manually."
 
 # --- VM management ---
@@ -77,6 +78,10 @@ vm-inject: ## Re-inject host configs (claude, git, gh, gcloud) into running VM
 	if [ -n "$$VERTEX_VARS" ]; then \
 		$$SSH dev@$$IP "grep -q CLAUDE_CODE_USE_VERTEX ~/.bashrc 2>/dev/null || printf '$$VERTEX_VARS\n' >> ~/.bashrc" 2>/dev/null && echo "  -> vertex env vars"; \
 	fi; \
+	if [ -d "$$HOME/.local/share/opencode" ]; then $$SSH dev@$$IP "mkdir -p ~/.local/share/opencode" 2>/dev/null; \
+		rsync -az -e "$$SSH" "$$HOME/.local/share/opencode/" dev@$$IP:~/.local/share/opencode/ 2>/dev/null && echo "  -> opencode auth"; fi; \
+	if [ -d "$$HOME/.config/opencode" ]; then $$SSH dev@$$IP "mkdir -p ~/.config/opencode" 2>/dev/null; \
+		rsync -az -e "$$SSH" "$$HOME/.config/opencode/" dev@$$IP:~/.config/opencode/ 2>/dev/null && echo "  -> opencode config"; fi; \
 	echo "Done."
 
 vm-rebuild: vm-destroy vm ## Destroy and recreate the VM
