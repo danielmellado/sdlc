@@ -844,13 +844,14 @@ openshell-ai() {
 
     if ! command -v openshell &>/dev/null; then
         echo "Error: openshell not installed. Run: make openshell"
-        echo "  or: uv tool install -U openshell"
         return 1
     fi
 
+    project_dir="$(cd "$project_dir" && pwd)"
+
     local sdlc_root
     sdlc_root="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
-    local policy_file="${sdlc_root}/openshell/policy-${agent/opencode/opencode}.yaml"
+    local policy_file
     if [[ "$agent" == "claude" ]]; then
         policy_file="${sdlc_root}/openshell/policy-claude.yaml"
     else
@@ -862,28 +863,34 @@ openshell-ai() {
         return 1
     fi
 
-    local driver_args=()
+    local proj_short prefix
+    proj_short="$(basename "$project_dir" | cut -c1-10)"
+    [[ "$agent" == "opencode" ]] && prefix="oc" || prefix="cl"
+    local sandbox_name="${prefix}-${proj_short}"
+    local create_args=(
+        --name "$sandbox_name"
+        --policy "$policy_file"
+        --auto-providers
+    )
+
     if [[ -n "$driver" ]]; then
         export OPENSHELL_DRIVERS="$driver"
     fi
 
-    local sandbox_name="sdlc-${agent}-$(basename "$project_dir")"
+    if [[ "$use_local" == true ]]; then
+        create_args+=(--env "OPENCODE_PROVIDER=${OPENCODE_PROVIDER:-ollama}")
+    fi
 
     echo "Launching $agent in OpenShell sandbox (driver: ${driver:-auto})..."
     echo "  Project: $project_dir"
     echo "  Policy:  $policy_file"
 
-    if [[ "$use_local" == true ]]; then
-        export OPENCODE_PROVIDER="${OPENCODE_PROVIDER:-ollama}"
-    fi
-
-    openshell sandbox create \
-        --name "$sandbox_name" \
-        --workdir "$project_dir" \
-        -- "$agent"
-
-    # Apply policy after sandbox creation (hot-reloadable)
-    openshell policy set "$sandbox_name" --policy "$policy_file" --wait 2>/dev/null || true
+    # Upload project files then launch the agent inside the project dir
+    openshell sandbox create "${create_args[@]}" --upload "${project_dir}" --detach 2>&1
+    local proj_basename
+    proj_basename="$(basename "$project_dir")"
+    openshell sandbox exec --name "$sandbox_name" --tty \
+        --workdir "/sandbox/${proj_basename}" -- "$agent"
 }
 
 # --- Quick project setup with all AI tools ---

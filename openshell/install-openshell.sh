@@ -18,16 +18,8 @@ install_openshell_cli() {
         return
     fi
 
-    if command -v uv &>/dev/null; then
-        info "Installing OpenShell via uv..."
-        uv tool install -U openshell
-    elif command -v pip &>/dev/null; then
-        info "Installing OpenShell via pip..."
-        pip install --user openshell
-    else
-        info "Installing OpenShell via install script..."
-        curl -LsSf https://raw.githubusercontent.com/NVIDIA/OpenShell/main/install.sh | sh
-    fi
+    info "Installing OpenShell CLI..."
+    curl -LsSf https://raw.githubusercontent.com/NVIDIA/OpenShell/main/install.sh | sh
 }
 
 check_drivers() {

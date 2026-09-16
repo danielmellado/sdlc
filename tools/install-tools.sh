@@ -172,11 +172,7 @@ install_openshell() {
         return
     fi
     warn "Installing OpenShell..."
-    if check_cmd uv; then
-        uv tool install -U openshell
-    else
-        curl -LsSf https://raw.githubusercontent.com/NVIDIA/OpenShell/main/install.sh | sh
-    fi
+    curl -LsSf https://raw.githubusercontent.com/NVIDIA/OpenShell/main/install.sh | sh
 }
 
 # --- Run all ---

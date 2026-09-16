@@ -1,107 +1,125 @@
 # OpenShell sandbox policy for Claude Code.
-# Equivalent to nono/claude-code.json.
+# Mirrors nono/claude-code.json network allowlist.
 #
-# Apply:  openshell policy set <sandbox> --policy openshell/policy-claude.yaml
+# Apply:  openshell policy set <sandbox> --policy openshell/policy-claude.yaml --wait
 # Or use: openshell-ai (wrapper in shell/ai-aliases.sh)
 
-network_policies:
-  # Anthropic API (Claude Code built-in)
-  - host: "api.anthropic.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST"]
-            path: "/**"
-
-  # Google Vertex AI (Anthropic models via Vertex)
-  - host: "aiplatform.googleapis.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST"]
-            path: "/**"
-  - host: "us-east5-aiplatform.googleapis.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST"]
-            path: "/**"
-  - host: "global-aiplatform.googleapis.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST"]
-            path: "/**"
-
-  # Google OAuth / auth
-  - host: "oauth2.googleapis.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST"]
-            path: "/**"
-  - host: "accounts.google.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST"]
-            path: "/**"
-  - host: "www.googleapis.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST"]
-            path: "/**"
-
-  # GitHub (git operations, PRs, CI)
-  - host: "api.github.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST", "PUT", "PATCH", "DELETE"]
-            path: "/**"
-  - host: "github.com"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET", "POST"]
-            path: "/**"
-
-  # Package registries (read-only)
-  - host: "registry.npmjs.org"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET"]
-            path: "/**"
-  - host: "proxy.golang.org"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["GET"]
-            path: "/**"
-
-  # diffity / sentry (Claude Code built-in)
-  - host: "statsigapi.net"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["POST"]
-            path: "/**"
-  - host: "sentry.io"
-    rules:
-      - protocol: rest
-        allow:
-          - method: ["POST"]
-            path: "/**"
+version: 1
 
 filesystem_policy:
-  # Workspace is mounted read-write by OpenShell by default.
-  # Additional read-only mounts for gcloud auth:
-  mounts:
-    - source: "~/.config/gcloud"
-      target: "/home/sandbox/.config/gcloud"
-      read_only: true
-    - source: "~/.gitconfig"
-      target: "/home/sandbox/.gitconfig"
-      read_only: true
+  include_workdir: true
+  read_only: [/usr, /lib, /lib64, /etc, /proc, /dev/urandom]
+  read_write: [/tmp]
+
+landlock:
+  compatibility: best_effort
+
+network_policies:
+  # --- LLM providers ---
+  anthropic:
+    name: anthropic-api
+    endpoints:
+      - host: api.anthropic.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+    binaries:
+      - path: /usr/local/bin/claude
+
+  vertex_ai:
+    name: google-vertex-ai
+    endpoints:
+      - host: aiplatform.googleapis.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+      - host: global-aiplatform.googleapis.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+      - host: us-east5-aiplatform.googleapis.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+    binaries:
+      - path: /usr/local/bin/claude
+
+  google_auth:
+    name: google-oauth
+    endpoints:
+      - host: oauth2.googleapis.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+      - host: accounts.google.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+      - host: www.googleapis.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/local/bin/claude
+
+  # --- GitHub ---
+  github:
+    name: github-api
+    endpoints:
+      - host: api.github.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+      - host: github.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+    binaries:
+      - path: /usr/local/bin/claude
+      - path: /usr/bin/git
+      - path: /usr/bin/gh
+
+  # --- Package registries (read-only) ---
+  registries:
+    name: package-registries
+    endpoints:
+      - host: registry.npmjs.org
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+      - host: proxy.golang.org
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
+    binaries:
+      - path: /usr/local/bin/claude
+      - path: /usr/bin/npm
+      - path: /usr/bin/node
+
+  # --- Claude Code telemetry ---
+  telemetry:
+    name: claude-telemetry
+    endpoints:
+      - host: statsigapi.net
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+      - host: sentry.io
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: full
+    binaries:
+      - path: /usr/local/bin/claude
