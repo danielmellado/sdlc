@@ -1,0 +1,207 @@
+# OpenShell sandbox policy for OpenCode.
+# Equivalent to nono/opencode.json.
+#
+# Apply:  openshell policy set <sandbox> --policy openshell/policy-opencode.yaml
+# Or use: openshell-ai --opencode (wrapper in shell/ai-aliases.sh)
+
+network_policies:
+  # Anthropic API
+  - host: "api.anthropic.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # OpenAI API
+  - host: "api.openai.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # OpenCode services
+  - host: "opencode.ai"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "api.opencode.ai"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # Google Vertex AI (all regions)
+  - host: "aiplatform.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "global-aiplatform.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "us-east5-aiplatform.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "us-central1-aiplatform.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "europe-west1-aiplatform.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "generativelanguage.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # Google OAuth / auth
+  - host: "oauth2.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "accounts.google.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "www.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # Quay.io (CVE scanning via skopeo + Quay API)
+  - host: "quay.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "cdn.quay.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "cdn01.quay.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "cdn02.quay.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "cdn03.quay.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+
+  # Red Hat registries and security data
+  - host: "access.redhat.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "registry.redhat.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+
+  # GitHub
+  - host: "api.github.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+            path: "/**"
+  - host: "github.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # Package registries (read-only)
+  - host: "registry.npmjs.org"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "proxy.golang.org"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "pypi.org"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "files.pythonhosted.org"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "crates.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "static.crates.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+
+filesystem_policy:
+  mounts:
+    - source: "~/.config/gcloud"
+      target: "/home/sandbox/.config/gcloud"
+      read_only: true
+    - source: "~/.config/opencode"
+      target: "/home/sandbox/.config/opencode"
+      read_only: false
+    - source: "~/.local/share/opencode"
+      target: "/home/sandbox/.local/share/opencode"
+      read_only: false
+    - source: "~/.gitconfig"
+      target: "/home/sandbox/.gitconfig"
+      read_only: true

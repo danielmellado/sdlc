@@ -808,6 +808,84 @@ _sdlc_install_diffity_commands() {
     rm -rf "$tmpdir"
 }
 
+# --- OpenShell sandbox wrapper (optional alternative to nono) ---
+openshell-ai() {
+    local project_dir=""
+    local agent="claude"
+    local driver=""
+    local use_local=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --opencode|--oc)  agent="opencode" ;;
+            --podman)         driver="podman" ;;
+            --microvm|--vm)   driver="vm" ;;
+            --local)          use_local=true; agent="opencode" ;;
+            -*)               echo "Unknown flag: $1"; return 1 ;;
+            *)                project_dir="$1" ;;
+        esac
+        shift
+    done
+
+    if [[ -z "$project_dir" ]]; then
+        echo "Usage: openshell-ai <project-dir> [--opencode] [--podman|--microvm] [--local]"
+        echo ""
+        echo "Sandbox backends:"
+        echo "  --podman       Rootless container (Podman 5.x)"
+        echo "  --microvm      Hardware VM via libkrun/KVM"
+        echo "  (default)      Auto-detect: Podman > error"
+        echo ""
+        echo "Agents:"
+        echo "  (default)      Claude Code"
+        echo "  --opencode     OpenCode"
+        echo "  --local        OpenCode + Ollama (fully offline)"
+        return 1
+    fi
+
+    if ! command -v openshell &>/dev/null; then
+        echo "Error: openshell not installed. Run: make openshell"
+        echo "  or: uv tool install -U openshell"
+        return 1
+    fi
+
+    local sdlc_root
+    sdlc_root="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+    local policy_file="${sdlc_root}/openshell/policy-${agent/opencode/opencode}.yaml"
+    if [[ "$agent" == "claude" ]]; then
+        policy_file="${sdlc_root}/openshell/policy-claude.yaml"
+    else
+        policy_file="${sdlc_root}/openshell/policy-opencode.yaml"
+    fi
+
+    if [[ ! -f "$policy_file" ]]; then
+        echo "Error: Policy file not found: $policy_file"
+        return 1
+    fi
+
+    local driver_args=()
+    if [[ -n "$driver" ]]; then
+        export OPENSHELL_DRIVERS="$driver"
+    fi
+
+    local sandbox_name="sdlc-${agent}-$(basename "$project_dir")"
+
+    echo "Launching $agent in OpenShell sandbox (driver: ${driver:-auto})..."
+    echo "  Project: $project_dir"
+    echo "  Policy:  $policy_file"
+
+    if [[ "$use_local" == true ]]; then
+        export OPENCODE_PROVIDER="${OPENCODE_PROVIDER:-ollama}"
+    fi
+
+    openshell sandbox create \
+        --name "$sandbox_name" \
+        --workdir "$project_dir" \
+        -- "$agent"
+
+    # Apply policy after sandbox creation (hot-reloadable)
+    openshell policy set "$sandbox_name" --policy "$policy_file" --wait 2>/dev/null || true
+}
+
 # --- Quick project setup with all AI tools ---
 ai-init() {
     local project_dir="${1:-.}"

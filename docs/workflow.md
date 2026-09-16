@@ -36,6 +36,35 @@ Agent panes can run either **Claude Code** (default) or **OpenCode** (open
 source alternative). Both are sandboxed via nono. OpenCode also supports
 local LLMs through Ollama for fully offline/private development.
 
+## Quick Start (no VM)
+
+Run directly on your host — no VM needed:
+
+```bash
+# 1. Install everything
+git clone https://github.com/danielmellado/sdlc.git ~/sdlc
+cd ~/sdlc && ./install.sh
+
+# 2. Restart your shell
+source ~/.bashrc
+
+# 3. Start coding (neovim + sandboxed Claude Code)
+tmux-ai ~/Devel/my-project
+
+# Or with OpenCode
+tmux-ai ~/Devel/my-project --opencode
+
+# Or fully offline with Ollama
+tmux-ai ~/Devel/my-project --local
+```
+
+That's it. The installer symlinks configs, installs tools, and adds shell
+aliases. nono sandboxes agents at the kernel level with zero overhead.
+
+For full VM-based isolation instead, see [VM-Based Workflow](#vm-based-workflow)
+below. For container/MicroVM-based isolation via OpenShell, see
+[Alternative: OpenShell Sandbox](#alternative-openshell-sandbox).
+
 ## Daily Workflow
 
 ### 1. Starting a Coding Session
@@ -361,10 +390,15 @@ Press `Space` and wait for the which-key menu to see all available groups.
 | `scan-cves <image>` | Scan Quay image for CVEs |
 | `ai-init <dir>` | Set up speckit + diffity in a project |
 | `spec-init` | Quick `specify init . --ai claude` |
+| `openshell-ai <dir>` | Launch sandboxed agent via OpenShell (Podman/MicroVM) |
+| `openshell-ai <dir> --opencode` | OpenShell + OpenCode |
+| `openshell-ai <dir> --microvm` | OpenShell with MicroVM (KVM) driver |
 
 ## Sandbox Security Model
 
-nono.sh uses Landlock LSM (Linux kernel 6.7+) to enforce:
+### nono (default)
+
+nono uses Landlock LSM (Linux kernel 6.7+) to enforce:
 
 - **Filesystem**: AI agents can only access the current working directory
   and explicitly allowed paths. `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.kube`,
@@ -385,6 +419,49 @@ Two nono profiles are provided:
 
 Zero startup overhead and no image management, while maintaining strong
 kernel-level isolation.
+
+### Alternative: OpenShell Sandbox
+
+[NVIDIA OpenShell](https://github.com/nvidia/openShell) provides container
+or MicroVM-based sandboxing with declarative YAML policies. Use it when you
+want finer-grained network control (HTTP method + path level) or hardware
+VM isolation without managing a full libvirt VM.
+
+```bash
+# Install OpenShell (optional)
+make openshell
+
+# Launch with Podman (rootless containers)
+openshell-ai ~/Devel/my-project                    # Claude Code
+openshell-ai ~/Devel/my-project --opencode         # OpenCode
+openshell-ai ~/Devel/my-project --opencode --local  # OpenCode + Ollama
+
+# Launch with MicroVM (hardware VM via libkrun/KVM)
+openshell-ai ~/Devel/my-project --microvm
+```
+
+Three sandbox options compared:
+
+| Aspect | nono (default) | OpenShell + Podman | OpenShell + MicroVM |
+|--------|----------------|--------------------|---------------------|
+| Isolation | Landlock LSM | Rootless container | Hardware VM (KVM) |
+| Overhead | Near-zero | Container startup | VM boot (~2s) |
+| Network control | Domain allowlist | L7 (HTTP method+path) | L7 (HTTP method+path) |
+| Hot-reload policies | No (restart) | Yes | Yes |
+| Requirements | Kernel 6.7+ | Podman 5.x | KVM on host |
+| Config format | JSON | YAML | YAML |
+| Best for | Daily use, VMs | Host with Podman | Strongest isolation |
+
+OpenShell policies are in `openshell/` and mirror the nono profiles:
+
+| Policy | File | Equivalent nono profile |
+|--------|------|------------------------|
+| Claude Code | `openshell/policy-claude.yaml` | `nono/claude-code.json` |
+| OpenCode | `openshell/policy-opencode.yaml` | `nono/opencode.json` |
+
+For Vertex AI users: mount `~/.config/gcloud` read-only and allow
+`aiplatform.googleapis.com` + `oauth2.googleapis.com` in the policy (already
+configured in the provided policy files).
 
 ## Remote Control (Browser Access)
 

@@ -1,0 +1,107 @@
+# OpenShell sandbox policy for Claude Code.
+# Equivalent to nono/claude-code.json.
+#
+# Apply:  openshell policy set <sandbox> --policy openshell/policy-claude.yaml
+# Or use: openshell-ai (wrapper in shell/ai-aliases.sh)
+
+network_policies:
+  # Anthropic API (Claude Code built-in)
+  - host: "api.anthropic.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # Google Vertex AI (Anthropic models via Vertex)
+  - host: "aiplatform.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "us-east5-aiplatform.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "global-aiplatform.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # Google OAuth / auth
+  - host: "oauth2.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "accounts.google.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+  - host: "www.googleapis.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # GitHub (git operations, PRs, CI)
+  - host: "api.github.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+            path: "/**"
+  - host: "github.com"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET", "POST"]
+            path: "/**"
+
+  # Package registries (read-only)
+  - host: "registry.npmjs.org"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+  - host: "proxy.golang.org"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["GET"]
+            path: "/**"
+
+  # diffity / sentry (Claude Code built-in)
+  - host: "statsigapi.net"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["POST"]
+            path: "/**"
+  - host: "sentry.io"
+    rules:
+      - protocol: rest
+        allow:
+          - method: ["POST"]
+            path: "/**"
+
+filesystem_policy:
+  # Workspace is mounted read-write by OpenShell by default.
+  # Additional read-only mounts for gcloud auth:
+  mounts:
+    - source: "~/.config/gcloud"
+      target: "/home/sandbox/.config/gcloud"
+      read_only: true
+    - source: "~/.gitconfig"
+      target: "/home/sandbox/.gitconfig"
+      read_only: true

@@ -26,6 +26,9 @@ nvim-sync: ## Sync neovim plugins via lazy.nvim
 caveman: ## Install caveman plugin for Claude Code
 	@./tools/caveman/setup.sh
 
+openshell: ## Install OpenShell (optional sandbox: Podman or MicroVM)
+	@./openshell/install-openshell.sh
+
 clean: ## Remove symlinks (does not uninstall tools)
 	@echo "Removing symlinks..."
 	@rm -f $(HOME)/.config/nvim 2>/dev/null || true
