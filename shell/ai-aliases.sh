@@ -75,7 +75,7 @@ tmux-ai() {
         local os_flags=""
         [[ "$use_opencode" == true ]] && os_flags="--opencode"
         [[ "$use_local" == true ]] && os_flags="--local"
-        agent_cmd="openshell-ai $project_dir $os_flags"
+        agent_cmd="source $SDLC_ROOT/shell/ai-aliases.sh && openshell-ai $project_dir $os_flags"
     elif [[ "$use_opencode" == true ]]; then
         agent_cmd="$SDLC_ROOT/nono/scripts/nono-opencode.sh"
         if [[ "$use_local" == true ]]; then
