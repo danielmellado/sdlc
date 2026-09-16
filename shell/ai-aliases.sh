@@ -892,12 +892,23 @@ openshell-ai() {
         create_args+=(--env "OPENCODE_PROVIDER=${OPENCODE_PROVIDER:-ollama}")
     fi
 
+    # Pass Vertex AI / Google Cloud env vars if set on host
+    local env_var
+    for env_var in GOOGLE_CLOUD_PROJECT ANTHROPIC_VERTEX_PROJECT_ID VERTEX_LOCATION \
+                   CLOUD_ML_REGION CLAUDE_CODE_USE_VERTEX; do
+        [[ -n "${!env_var:-}" ]] && create_args+=(--env "${env_var}=${!env_var}")
+    done
+
     echo "Launching $agent in OpenShell sandbox (driver: ${driver:-auto})..."
     echo "  Project: $project_dir"
     echo "  Policy:  $policy_file"
 
-    # Upload project files then launch the agent inside the project dir
-    openshell sandbox create "${create_args[@]}" --upload "${project_dir}" --detach 2>&1
+    # Upload project + gcloud credentials, then launch the agent
+    local upload_args=(--upload "${project_dir}")
+    [[ -d "$HOME/.config/gcloud" ]] && upload_args+=(--upload "$HOME/.config/gcloud:/sandbox/.config/gcloud")
+    [[ -f "$HOME/.config/opencode/opencode.jsonc" ]] && upload_args+=(--upload "$HOME/.config/opencode:/sandbox/.config/opencode")
+
+    openshell sandbox create "${create_args[@]}" "${upload_args[@]}" --detach 2>&1
     local proj_basename
     proj_basename="$(basename "$project_dir")"
     openshell sandbox exec --name "$sandbox_name" --tty \
