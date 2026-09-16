@@ -37,12 +37,15 @@ alias spec-init="specify init . --ai claude"
 #   tmux-ai ~/project --opencode    # use OpenCode instead of Claude Code
 #   tmux-ai ~/project --oc          # short form
 #   tmux-ai ~/project --local       # OpenCode + Ollama (local LLM)
+#   tmux-ai ~/project --openshell   # use OpenShell sandbox instead of nono
+#   tmux-ai ~/project --oc --openshell  # OpenCode in OpenShell
 tmux-ai() {
     local project_dir="${1:-.}"
     local model="${2:-}"
     local agents="${3:-1}"
     local use_opencode=false
     local use_local=false
+    local use_openshell=false
 
     # Parse flags from any positional argument
     local new_args=()
@@ -50,6 +53,7 @@ tmux-ai() {
         case "$arg" in
             --opencode|--oc) use_opencode=true ;;
             --local)         use_opencode=true; use_local=true ;;
+            --openshell)     use_openshell=true ;;
             *)               new_args+=("$arg") ;;
         esac
     done
@@ -67,7 +71,12 @@ tmux-ai() {
     fi
 
     local agent_cmd
-    if [[ "$use_opencode" == true ]]; then
+    if [[ "$use_openshell" == true ]]; then
+        local os_flags=""
+        [[ "$use_opencode" == true ]] && os_flags="--opencode"
+        [[ "$use_local" == true ]] && os_flags="--local"
+        agent_cmd="openshell-ai $project_dir $os_flags"
+    elif [[ "$use_opencode" == true ]]; then
         agent_cmd="$SDLC_ROOT/nono/scripts/nono-opencode.sh"
         if [[ "$use_local" == true ]]; then
             agent_cmd="$agent_cmd --local"
@@ -173,12 +182,13 @@ CLAUDEEOF
 #   tmux-ai3 . opus           # same with specific model
 #   tmux-ai2 . --opencode     # 2 OpenCode agents
 #   tmux-ai3 . --local        # 3 agents with local LLM
+#   tmux-ai2 . --openshell    # 2 agents in OpenShell
 tmux-ai2() {
     local flags=()
     local positional=()
     for arg in "$@"; do
         case "$arg" in
-            --opencode|--oc|--local) flags+=("$arg") ;;
+            --opencode|--oc|--local|--openshell) flags+=("$arg") ;;
             *) positional+=("$arg") ;;
         esac
     done
@@ -189,7 +199,7 @@ tmux-ai3() {
     local positional=()
     for arg in "$@"; do
         case "$arg" in
-            --opencode|--oc|--local) flags+=("$arg") ;;
+            --opencode|--oc|--local|--openshell) flags+=("$arg") ;;
             *) positional+=("$arg") ;;
         esac
     done
@@ -863,10 +873,11 @@ openshell-ai() {
         return 1
     fi
 
-    local proj_short prefix
-    proj_short="$(basename "$project_dir" | cut -c1-10)"
+    local proj_short prefix suffix
+    proj_short="$(basename "$project_dir" | cut -c1-8)"
     [[ "$agent" == "opencode" ]] && prefix="oc" || prefix="cl"
-    local sandbox_name="${prefix}-${proj_short}"
+    suffix="$(printf '%04x' $((RANDOM % 65536)))"
+    local sandbox_name="${prefix}-${proj_short}-${suffix}"
     local create_args=(
         --name "$sandbox_name"
         --policy "$policy_file"
