@@ -26,6 +26,7 @@ network_policies:
         access: full
     binaries:
       - path: /usr/bin/opencode
+      - path: /usr/lib/node_modules/opencode-ai/bin/.opencode
 
   openai:
     name: openai-api
@@ -37,6 +38,7 @@ network_policies:
         access: full
     binaries:
       - path: /usr/bin/opencode
+      - path: /usr/lib/node_modules/opencode-ai/bin/.opencode
 
   opencode:
     name: opencode-services
@@ -51,8 +53,14 @@ network_policies:
         protocol: rest
         enforcement: enforce
         access: full
+      - host: models.dev
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-only
     binaries:
       - path: /usr/bin/opencode
+      - path: /usr/lib/node_modules/opencode-ai/bin/.opencode
 
   vertex_ai:
     name: google-vertex-ai
@@ -89,6 +97,7 @@ network_policies:
         access: full
     binaries:
       - path: /usr/bin/opencode
+      - path: /usr/lib/node_modules/opencode-ai/bin/.opencode
 
   google_auth:
     name: google-oauth
@@ -110,6 +119,7 @@ network_policies:
         access: read-only
     binaries:
       - path: /usr/bin/opencode
+      - path: /usr/lib/node_modules/opencode-ai/bin/.opencode
 
   # --- CVE scanning (skopeo + curl) ---
   quay:
@@ -177,6 +187,7 @@ network_policies:
         access: full
     binaries:
       - path: /usr/bin/opencode
+      - path: /usr/lib/node_modules/opencode-ai/bin/.opencode
       - path: /usr/bin/git
       - path: /usr/bin/gh
 
@@ -216,5 +227,6 @@ network_policies:
         access: read-only
     binaries:
       - path: /usr/bin/opencode
+      - path: /usr/lib/node_modules/opencode-ai/bin/.opencode
       - path: /usr/bin/npm
       - path: /usr/bin/node
