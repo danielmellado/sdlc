@@ -905,8 +905,8 @@ openshell-ai() {
 
     # Upload project + gcloud credentials, then launch the agent
     local upload_args=(--upload "${project_dir}")
-    [[ -d "$HOME/.config/gcloud" ]] && upload_args+=(--upload "$HOME/.config/gcloud:/sandbox/.config/gcloud")
-    [[ -f "$HOME/.config/opencode/opencode.jsonc" ]] && upload_args+=(--upload "$HOME/.config/opencode:/sandbox/.config/opencode")
+    [[ -d "$HOME/.config/gcloud" ]] && upload_args+=(--upload "$HOME/.config/gcloud:/sandbox/.config/")
+    [[ -d "$HOME/.config/opencode" ]] && upload_args+=(--upload "$HOME/.config/opencode:/sandbox/.config/")
 
     openshell sandbox create "${create_args[@]}" "${upload_args[@]}" --detach 2>&1
     local proj_basename
