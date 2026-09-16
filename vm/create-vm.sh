@@ -319,6 +319,16 @@ if ! command -v claude &>/dev/null; then
     npm install -g @anthropic-ai/claude-code --prefix "$HOME/.local" || echo "[!] claude install failed"
 fi
 
+# OpenCode (open source AI coding agent)
+if ! command -v opencode &>/dev/null; then
+    npm install -g opencode-ai@latest --prefix "$HOME/.local" || echo "[!] opencode install failed"
+fi
+
+# Ollama (local LLM runtime)
+if ! command -v ollama &>/dev/null; then
+    curl -fsSL https://ollama.com/install.sh | sh || echo "[!] ollama install failed"
+fi
+
 # diffity (diff review)
 if ! command -v diffity &>/dev/null; then
     npm install -g diffity --prefix "$HOME/.local" || echo "[!] diffity install failed"
@@ -344,6 +354,7 @@ if [[ -d ~/sdlc ]]; then
     ln -sfn ~/sdlc/nvim ~/.config/nvim
     ln -sf ~/sdlc/tmux/tmux.conf ~/.tmux.conf
     ln -sf ~/sdlc/nono/scripts/nono-claude.sh ~/.local/bin/nono-claude
+    ln -sf ~/sdlc/nono/scripts/nono-opencode.sh ~/.local/bin/nono-opencode
     if ! grep -qF "sdlc/shell/ai-env.sh" ~/.bashrc 2>/dev/null; then
         printf '\n# AI SDLC toolkit\nsource ~/sdlc/shell/ai-env.sh\nsource ~/sdlc/shell/ai-aliases.sh\n' >> ~/.bashrc
     fi

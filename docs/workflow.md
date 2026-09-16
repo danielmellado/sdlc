@@ -6,31 +6,35 @@ OpenShift/Go projects.
 ## Architecture
 
 ```
-┌───────────────────────────────────────────────────────────── ──┐
-│                          tmux                                  │
-│  ┌────────────────────────┐  ┌─────────────────────────────┐   │
-│  │       Neovim           │  │  Claude 1 (coder)           │   │
-│  │                        │  │  Sandboxed via nono.sh      │   │
-│  │  ┌──────────────────┐  │  │  Skills: /speckit.*         │   │
-│  │  │ claudecode.nvim  │◄─┼──┤         /diffity-review     │   │
-│  │  │  (MCP bridge)    │  │  ├─────────────────────────────┤   │
-│  │  │  also sandboxed  │  │  │  Claude 2 (reviewer)        │   │
-│  │  └──────────────────┘  │  │  Skills: /review-patterns   │   │
-│  │                        │  │         /triage-pr          |   │
-│  │  LSP: gopls, pyright   │  ├─────────────────────────────┤   │
-│  │  Lint: golangci-lint   │  │  Claude 3 (QE)              │   │
-│  │  Format: conform.nvim  │  │  Skills: /triage-ci         │   │
-│  │  Git: gitsigns,        │  │         /caveman            │   │
-│  │       fugitive         │  │                             │   │
-│  └────────────────────────┘  └─────────────────────────────┘   │
-└────────────────────────────────────────────────────────────── ─┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                              tmux                                    │
+│  ┌────────────────────────┐  ┌───────────────────────────────────┐   │
+│  │       Neovim           │  │  Agent 1 (coder)                 │   │
+│  │                        │  │  Claude Code OR OpenCode         │   │
+│  │  ┌──────────────────┐  │  │  Sandboxed via nono.sh           │   │
+│  │  │ claudecode.nvim  │◄─┼──┤  Skills: /speckit.* /scan-cves   │   │
+│  │  │  (MCP bridge)    │  │  │         /diffity-review          │   │
+│  │  │  also sandboxed  │  │  ├───────────────────────────────────┤   │
+│  │  └──────────────────┘  │  │  Agent 2 (reviewer)              │   │
+│  │                        │  │  Skills: /review-patterns         │   │
+│  │  LSP: gopls, pyright   │  │         /triage-pr               │   │
+│  │  Lint: golangci-lint   │  ├───────────────────────────────────┤   │
+│  │  Format: conform.nvim  │  │  Agent 3 (QE)                    │   │
+│  │  Git: gitsigns,        │  │  Skills: /triage-ci /caveman     │   │
+│  │       fugitive         │  │                                   │   │
+│  └────────────────────────┘  └───────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────┘
           │                           │
           ▼                           ▼
-    ┌───────────┐            ┌────────────────┐
-    │  diffity  │            │ gh-ci-artifacts│
-    │ (browser) │            │   (CI logs)    │
-    └───────────┘            └────────────────┘
+    ┌───────────┐            ┌────────────────┐      ┌──────────────┐
+    │  diffity  │            │ gh-ci-artifacts│      │ Quay/skopeo  │
+    │ (browser) │            │   (CI logs)    │      │ (CVE scans)  │
+    └───────────┘            └────────────────┘      └──────────────┘
 ```
+
+Agent panes can run either **Claude Code** (default) or **OpenCode** (open
+source alternative). Both are sandboxed via nono. OpenCode also supports
+local LLMs through Ollama for fully offline/private development.
 
 ## Daily Workflow
 
@@ -51,24 +55,60 @@ cd ~/Devel/openshift/my-project
 nvim .
 # In tmux: press prefix+a to open sandboxed Claude Code in right pane
 # Or prefix+u for an unsandboxed session (escape hatch)
+
+# Option D: Use OpenCode instead of Claude Code
+tmux-ai ~/Devel/openshift/my-project --opencode    # sandboxed OpenCode
+tmux-ai ~/Devel/openshift/my-project --oc           # short form
+tmux-ai2 ~/Devel/openshift/my-project --opencode    # nvim + 2 OpenCode agents
+
+# Option E: Local LLM via OpenCode + Ollama (fully offline)
+tmux-ai ~/Devel/openshift/my-project --local        # OpenCode + Ollama
+# In tmux: press prefix+O for OpenCode with Ollama in right pane
 ```
 
-`tmux-ai` always launches Claude Code inside a nono sandbox by default.
-Agent teams are enabled globally, so you can spawn sub-agents from any session.
+`tmux-ai` launches Claude Code by default, or OpenCode with `--opencode`/`--oc`.
+Both run inside a nono sandbox. Agent teams are enabled globally for Claude Code
+sessions, so you can spawn sub-agents from any session.
 
 Model shortcuts for standalone use:
 
 ```bash
+# Claude Code (sandboxed)
 claude-opus                # sandboxed Opus
 claude-sonnet              # sandboxed Sonnet
 claude-haiku               # sandboxed Haiku
 nono-claude --model opus   # equivalent long form
+
+# OpenCode (sandboxed)
+nono-opencode              # sandboxed OpenCode (uses configured provider)
+oc-ai                      # alias for nono-opencode
+ai-local                   # sandboxed OpenCode + Ollama (local LLM)
 ```
 
 Inside Neovim, `<leader>ac` (Space a c) also opens Claude Code via
 `claudecode.nvim`. This too launches through `nono-claude.sh`, so it is
 sandboxed. Claude Code can read your open buffers, see diagnostics, and
 show diffs directly in Neovim via the MCP WebSocket bridge.
+
+### Local LLM Support (Ollama via OpenCode)
+
+For fully offline or private development, use OpenCode with Ollama as the
+LLM backend. No API keys or cloud access needed.
+
+```bash
+# Install Ollama and pull a model
+ollama pull qwen2.5-coder:32b    # or any model you prefer
+
+# Launch OpenCode with Ollama
+ai-local                         # standalone
+tmux-ai . --local                # in tmux layout
+# Or in tmux: prefix+O
+```
+
+Configure the default model in OpenCode's config (`~/.config/opencode/opencode.json`)
+or via the `/models` command inside OpenCode's TUI. OpenCode supports any
+OpenAI-compatible local server, so alternatives like LM Studio or vLLM work
+too -- just set the provider `baseURL` in the config.
 
 ### 2. Adding a New Feature (Spec-Driven)
 
@@ -205,6 +245,54 @@ When reviewing Go/OpenShift code:
 Checks for: error handling, naming conventions, concurrency issues,
 Kubernetes-specific patterns (RBAC, deep-copy, finalizers), and test quality.
 
+### 8. Scanning Container Images for CVEs
+
+Scan container images for known vulnerabilities. Two backends are supported:
+
+- **Quay/Clair** (default): skopeo + Quay security API. Best for Quay-hosted images.
+- **ACS/roxctl**: Red Hat Advanced Cluster Security scanner. Works with any
+  registry and is the Konflux-standard backend (migrating from clair-scan to
+  roxctl-scan).
+
+#### Shell command (no LLM needed)
+
+```bash
+# Quay/Clair backend (default)
+scan-cves quay.io/openshift/ose-cli:v4.16
+scan-cves quay.io/openshift/ose-cli:v4.16 --severity high
+
+# ACS/roxctl backend (any registry)
+export ROX_ENDPOINT=central.stackrox.svc:443
+export ROX_API_TOKEN=<token>
+scan-cves quay.io/openshift/ose-cli:v4.16 --roxctl
+scan-cves registry.redhat.io/ubi9:latest --roxctl --severity critical
+```
+
+The Quay backend uses skopeo to get the manifest digest and queries the Quay
+security API (Clair scanner). The roxctl backend delegates to ACS Central,
+which is the same scanner used by Konflux `roxctl-scan` pipeline tasks.
+
+For private Quay images, set `QUAY_TOKEN` in your environment:
+
+```bash
+export QUAY_TOKEN="your-quay-oauth-token"
+scan-cves quay.io/myorg/private-image:latest
+```
+
+#### Claude Code skill (AI-assisted analysis)
+
+```
+/scan-cves quay.io/openshift/ose-cli:v4.16
+/scan-cves quay.io/openshift/ose-cli:v4.16 --roxctl
+```
+
+The skill does everything the shell command does, plus:
+- Cross-references with Red Hat Security Data API for RHSA advisories
+- Checks if newer image tags fix the critical/high CVEs
+- Handles multi-arch manifest lists
+- Provides actionable remediation recommendations
+- With `--roxctl`, also runs `roxctl image check` for Konflux policy violations
+
 ## Keybindings Reference
 
 ### Neovim (leader = Space)
@@ -243,6 +331,8 @@ Press `Space` and wait for the which-key menu to see all available groups.
 | `prefix a` | Open sandboxed Claude Code in right pane |
 | `prefix A` | Full AI layout (nvim left, sandboxed Claude right) |
 | `prefix u` | Open unsandboxed Claude Code (escape hatch) |
+| `prefix o` | Open sandboxed OpenCode in right pane |
+| `prefix O` | Open sandboxed OpenCode + Ollama (local LLM) |
 | `prefix e` | Toggle broadcast to all panes |
 | `prefix c` | New tmux window (tmux default) |
 | `prefix "` | Split pane horizontally |
@@ -254,7 +344,9 @@ Press `Space` and wait for the which-key menu to see all available groups.
 
 | Command | Action |
 |---------|--------|
-| `tmux-ai <dir> [model]` | Open AI tmux session (nvim + 1 agent) |
+| `tmux-ai <dir> [model]` | Open AI tmux session (nvim + 1 Claude agent) |
+| `tmux-ai <dir> --opencode` | Open AI tmux session with OpenCode |
+| `tmux-ai <dir> --local` | Open AI tmux session with OpenCode + Ollama |
 | `tmux-ai2 <dir> [model]` | nvim + 2 agents (coder + reviewer) |
 | `tmux-ai3 <dir> [model]` | nvim + 3 agents (coder + reviewer + QE) |
 | `nono-claude` | Launch sandboxed Claude Code |
@@ -262,7 +354,11 @@ Press `Space` and wait for the which-key menu to see all available groups.
 | `nono-claude --rc` | Sandboxed Claude with Remote Control (browser access) |
 | `claude-opus` / `claude-sonnet` / `claude-haiku` | Model shortcut aliases |
 | `claudio` | Alias for `nono-claude` |
+| `nono-opencode` | Launch sandboxed OpenCode |
+| `oc-ai` | Alias for `nono-opencode` |
+| `ai-local` | OpenCode + Ollama (local LLM, sandboxed) |
 | `ci-triage <PR>` | Download and analyze CI failures |
+| `scan-cves <image>` | Scan Quay image for CVEs |
 | `ai-init <dir>` | Set up speckit + diffity in a project |
 | `spec-init` | Quick `specify init . --ai claude` |
 
@@ -270,17 +366,22 @@ Press `Space` and wait for the which-key menu to see all available groups.
 
 nono.sh uses Landlock LSM (Linux kernel 6.7+) to enforce:
 
-- **Filesystem**: Claude Code can only access the current working directory
+- **Filesystem**: AI agents can only access the current working directory
   and explicitly allowed paths. `~/.ssh`, `~/.aws`, `~/.gnupg`, `~/.kube`,
   `~/.docker` are blocked by default.
-- **Network**: Extends the built-in `claude-code` network profile (Anthropic
-  API, GitHub, package registries). No data exfiltration possible.
+- **Network**: Provider-specific allowlists. Claude Code extends nono's built-in
+  `claude-code` profile (Anthropic API, GitHub, registries). OpenCode has a
+  custom profile allowing multiple providers (Anthropic, OpenAI, Google, Ollama
+  on localhost, OpenCode Zen).
 - **Irrevocable**: Once applied, the sandbox cannot be loosened, even by the
   sandboxed process itself.
 
-The profile (`nono/claude-code.json`) extends nono's built-in `claude-code`
-profile and is used by every entry point: `tmux-ai`, tmux keybindings,
-Neovim's claudecode.nvim, and the shell aliases.
+Two nono profiles are provided:
+
+| Profile | File | Used by |
+|---------|------|---------|
+| Claude Code | `nono/claude-code.json` | `nono-claude`, `tmux-ai`, `prefix+a`, claudecode.nvim |
+| OpenCode | `nono/opencode.json` | `nono-opencode`, `tmux-ai --oc`, `prefix+o` |
 
 Zero startup overhead and no image management, while maintaining strong
 kernel-level isolation.

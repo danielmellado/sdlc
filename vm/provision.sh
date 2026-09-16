@@ -61,6 +61,18 @@ if ! command -v claude &>/dev/null; then
     npm install -g @anthropic-ai/claude-code --prefix "$HOME/.local"
 fi
 
+# --- Install OpenCode ---
+if ! command -v opencode &>/dev/null; then
+    echo "[+] Installing OpenCode..."
+    npm install -g opencode-ai@latest --prefix "$HOME/.local"
+fi
+
+# --- Install Ollama (local LLM runtime) ---
+if ! command -v ollama &>/dev/null; then
+    echo "[+] Installing Ollama..."
+    curl -fsSL https://ollama.com/install.sh | sh 2>/dev/null || echo "[!] Ollama install failed"
+fi
+
 # --- Install speckit ---
 if ! command -v specify &>/dev/null; then
     echo "[+] Installing speckit..."
@@ -81,9 +93,10 @@ ln -sfn "$HOME/sdlc/nvim" "$HOME/.config/nvim"
 echo "[+] Deploying tmux config..."
 ln -sf "$HOME/sdlc/tmux/tmux.conf" "$HOME/.tmux.conf"
 
-echo "[+] Deploying nono-claude wrapper..."
+echo "[+] Deploying nono wrappers..."
 mkdir -p "$HOME/.local/bin"
 ln -sf "$HOME/sdlc/nono/scripts/nono-claude.sh" "$HOME/.local/bin/nono-claude"
+ln -sf "$HOME/sdlc/nono/scripts/nono-opencode.sh" "$HOME/.local/bin/nono-opencode"
 
 echo "[+] Adding shell integration..."
 if ! grep -qF "sdlc/shell/ai-env.sh" "$HOME/.bashrc" 2>/dev/null; then
@@ -112,6 +125,10 @@ nvim --headless "+Lazy! sync" +qa 2>/dev/null || echo "[!] Neovim plugin sync fa
 echo "=== Provisioning complete ==="
 echo ""
 echo "Usage:"
-echo "  tmux-ai ~/workspace       # Start AI coding session"
+echo "  tmux-ai ~/workspace       # Start AI coding session (Claude Code)"
+echo "  tmux-ai ~/workspace --oc  # Start AI coding session (OpenCode)"
+echo "  tmux-ai ~/workspace --local # Start with local LLM (Ollama)"
 echo "  nono-claude                # Sandboxed Claude Code"
-echo "  claude                     # Claude Code (unsandboxed)"
+echo "  nono-opencode              # Sandboxed OpenCode"
+echo "  ai-local                   # OpenCode + Ollama (local LLM)"
+echo "  scan-cves <image>          # Scan Quay image for CVEs"

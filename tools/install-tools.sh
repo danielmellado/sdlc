@@ -103,6 +103,48 @@ install_diffity() {
     npm install -g diffity
 }
 
+# --- OpenCode ---
+install_opencode() {
+    if check_cmd opencode; then
+        info "opencode already installed"
+        return
+    fi
+    warn "Installing OpenCode..."
+    if check_cmd brew; then
+        brew install anomalyco/tap/opencode
+    elif check_cmd npm; then
+        npm install -g opencode-ai@latest
+    else
+        err "Cannot install opencode: need brew or npm."
+        return 1
+    fi
+}
+
+# --- Ollama (local LLM runtime, optional) ---
+install_ollama() {
+    if check_cmd ollama; then
+        info "ollama already installed"
+        return
+    fi
+    warn "Installing Ollama..."
+    curl -fsSL https://ollama.com/install.sh | sh
+}
+
+# --- skopeo (container image inspection) ---
+install_skopeo() {
+    if check_cmd skopeo; then
+        info "skopeo already installed"
+        return
+    fi
+    warn "Installing skopeo..."
+    if check_cmd dnf; then
+        sudo dnf install -y skopeo
+    else
+        err "Cannot install skopeo: dnf not found. Install manually."
+        return 1
+    fi
+}
+
 # --- gh CLI ---
 install_gh() {
     if check_cmd gh; then
@@ -127,6 +169,9 @@ main() {
     install_node
     install_nono
     install_claude_code
+    install_opencode
+    install_ollama
+    install_skopeo
     install_uv
     install_speckit
     install_diffity

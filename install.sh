@@ -64,10 +64,11 @@ do_links() {
         info "Shell sources already in $bashrc"
     fi
 
-    # nono-claude wrapper on PATH
+    # nono wrappers on PATH
     local local_bin="$HOME/.local/bin"
     mkdir -p "$local_bin"
     backup_and_link "$SDLC_ROOT/nono/scripts/nono-claude.sh" "$local_bin/nono-claude"
+    backup_and_link "$SDLC_ROOT/nono/scripts/nono-opencode.sh" "$local_bin/nono-opencode"
 }
 
 do_tools() {
