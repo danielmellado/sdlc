@@ -47,7 +47,7 @@ network_policies:
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-only
+        access: full
       - host: api.opencode.ai
         port: 443
         protocol: rest
