@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 PROFILE="${SCRIPT_DIR}/../claude-code.json"
 
 NONO_ARGS=()
@@ -47,8 +47,14 @@ if ! command -v nono &>/dev/null; then
     exit 1
 fi
 
+if [[ "$(pwd)" == "$HOME" ]]; then
+    echo "Warning: Running from \$HOME is not recommended (sandbox deny-rule conflicts)."
+    echo "  cd into a project directory first, e.g.:  cd ~/myproject && nono-claude"
+    exit 1
+fi
+
 exec nono run \
     --profile "$PROFILE" \
-    --allow . \
+    --allow-cwd \
     "${NONO_ARGS[@]}" \
     -- claude "${CLAUDE_ARGS[@]}"

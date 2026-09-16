@@ -22,6 +22,19 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 # Available: opus, sonnet, haiku, fable, or full model IDs
 # export ANTHROPIC_MODEL=sonnet
 
+# OpenCode: default provider and model (uncomment to override)
+# Providers: anthropic, openai, google, ollama, opencode (Zen)
+# export OPENCODE_PROVIDER=anthropic
+# export OPENCODE_MODEL=claude-sonnet-4-20250514
+
+# Quay.io token for private image CVE scanning (optional)
+# export QUAY_TOKEN=""
+
+# ACS / roxctl for image scanning (Konflux roxctl-scan backend)
+# Required when using: scan-cves <image> --roxctl
+# export ROX_ENDPOINT="central.stackrox.svc:443"
+# export ROX_API_TOKEN=""
+
 # Go toolchain: auto-download newer Go when required by tools like gopls
 export GOTOOLCHAIN=auto
 
