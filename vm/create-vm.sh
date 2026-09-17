@@ -183,7 +183,6 @@ virt-install \
     --graphics none \
     --console pty,target_type=serial \
     --noautoconsole \
-    --autostart \
     --import
 
 # --- Ensure iptables FORWARD allows VM traffic ---

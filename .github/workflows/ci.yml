@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: |
+          find shell/ nono/scripts/ tools/ vm/ openshell/ -name '*.sh' -print0 \
+            | xargs -0 shellcheck --severity=warning
+          shellcheck --severity=warning install.sh
+
+  json-lint:
+    name: Validate JSON
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check JSON files
+        run: |
+          fail=0
+          for f in nono/*.json; do
+            if ! python3 -m json.tool "$f" > /dev/null 2>&1; then
+              echo "❌ Invalid JSON: $f"
+              fail=1
+            else
+              echo "✅ $f"
+            fi
+          done
+          exit "$fail"
+
+  yaml-lint:
+    name: Validate YAML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check YAML files
+        run: |
+          fail=0
+          for f in openshell/*.yaml; do
+            if ! python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1]))" "$f" 2>&1; then
+              echo "❌ Invalid YAML: $f"
+              fail=1
+            else
+              echo "✅ $f"
+            fi
+          done
+          exit "$fail"
+
+  stylua:
+    name: StyLua
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run stylua
+        uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: --check nvim/

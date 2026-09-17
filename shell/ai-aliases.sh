@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # Shell aliases and functions for AI SDLC workflow.
 # Source this from your .bashrc:
-#   source ~/Devel/openshift/sdlc/shell/ai-aliases.sh
+#   source ~/path/to/sdlc/shell/ai-aliases.sh
 
-SDLC_ROOT="${SDLC_ROOT:-$HOME/Devel/openshift/sdlc}"
+if [[ -z "$SDLC_ROOT" ]]; then
+    _sdlc_alias_self="${BASH_SOURCE[0]:-$0}"
+    if [[ -L "$_sdlc_alias_self" ]]; then _sdlc_alias_self="$(readlink -f "$_sdlc_alias_self")"; fi
+    SDLC_ROOT="$(cd "$(dirname "$_sdlc_alias_self")/.." && pwd)"
+    unset _sdlc_alias_self
+fi
 
 # --- Sandboxed Claude Code ---
 alias nono-claude="$SDLC_ROOT/nono/scripts/nono-claude.sh"

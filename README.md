@@ -46,6 +46,7 @@ copied from the host. See [vm/README.md](vm/README.md) for details.
 | `nono/` | nono.sh sandbox profiles for running Claude Code safely |
 | `tools/` | Installation scripts for all external tools |
 | `skills/` | Claude Code custom skills for CI triage, PR triage, and code review |
+| `openshell/` | Optional [OpenShell](https://github.com/nvidia/openShell) sandbox policies (Podman/MicroVM) |
 | `vm/` | VM provisioning scripts (libvirt/cloud-init) for clean environments |
 | `docs/` | [Quickstart](docs/quickstart.md) and [workflow reference](docs/workflow.md) |
 

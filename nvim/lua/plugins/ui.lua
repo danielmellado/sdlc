@@ -11,7 +11,7 @@ return {
       integrations = {
         cmp = true,
         gitsigns = true,
-        neo_tree = true,
+        nvimtree = true,
         treesitter = true,
         mason = true,
         telescope = { enabled = true },
@@ -53,7 +53,7 @@ return {
         lualine_y = { "progress" },
         lualine_z = { "location" },
       },
-      extensions = { "neo-tree", "fugitive", "lazy" },
+      extensions = { "nvim-tree", "fugitive", "lazy" },
     },
   },
 

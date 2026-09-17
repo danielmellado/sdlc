@@ -69,6 +69,17 @@ do_links() {
     mkdir -p "$local_bin"
     backup_and_link "$SDLC_ROOT/nono/scripts/nono-claude.sh" "$local_bin/nono-claude"
     backup_and_link "$SDLC_ROOT/nono/scripts/nono-opencode.sh" "$local_bin/nono-opencode"
+
+    # Claude Code custom skills (global slash commands)
+    local claude_commands="$HOME/.claude/commands"
+    mkdir -p "$claude_commands"
+    for skill_dir in "$SDLC_ROOT"/skills/*/; do
+        local skill_name
+        skill_name="$(basename "$skill_dir")"
+        if [[ -f "$skill_dir/SKILL.md" ]]; then
+            backup_and_link "$skill_dir/SKILL.md" "$claude_commands/${skill_name}.md"
+        fi
+    done
 }
 
 do_tools() {

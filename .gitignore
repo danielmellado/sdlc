@@ -15,4 +15,4 @@ nvim/lazy-lock.json
 .env.local
 
 # Demo recordings (large binary files)
-demos/recordings/*.cast
+demos/recordings/

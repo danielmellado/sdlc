@@ -160,21 +160,6 @@ install_gh() {
     fi
 }
 
-# --- OpenShell (optional, container/MicroVM sandbox) ---
-install_openshell() {
-    if check_cmd openshell; then
-        info "openshell already installed"
-        return
-    fi
-    if ! check_cmd podman && ! [[ -c /dev/kvm ]]; then
-        warn "Skipping OpenShell: neither Podman nor KVM available."
-        warn "  Install podman (dnf install podman) or enable KVM for MicroVM."
-        return
-    fi
-    warn "Installing OpenShell..."
-    curl -LsSf https://raw.githubusercontent.com/NVIDIA/OpenShell/main/install.sh | sh
-}
-
 # --- Run all ---
 main() {
     info "=== AI SDLC Tool Installer ==="

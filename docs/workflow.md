@@ -335,7 +335,7 @@ The skill does everything the shell command does, plus:
 | `Space f g` | Live grep (Telescope) |
 | `Space f b` | Buffers (Telescope) |
 | `Space f s` | Document symbols |
-| `Ctrl+n` | Toggle file explorer (Neo-tree) |
+| `Ctrl+n` | Toggle file explorer (nvim-tree) |
 | `F3` | Toggle symbols outline |
 | `gd` | Go to definition |
 | `gr` | References |
