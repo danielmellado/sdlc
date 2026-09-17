@@ -27,6 +27,9 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 # export OPENCODE_PROVIDER=anthropic
 # export OPENCODE_MODEL=claude-sonnet-4-20250514
 
+# Ollama: remote GPU box (RTX 5070 Ti)
+export OLLAMA_HOST=http://192.168.1.58:11434
+
 # Quay.io token for private image CVE scanning (optional)
 # export QUAY_TOKEN=""
 

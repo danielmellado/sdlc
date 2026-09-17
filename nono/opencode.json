@@ -71,6 +71,7 @@
       "crates.io",
       "static.crates.io"
     ],
-    "open_port": [5391, 8391, 11434]
+    "open_port": [5391, 8391, 11434],
+    "allow_ip": ["192.168.1.58"]
   }
 }

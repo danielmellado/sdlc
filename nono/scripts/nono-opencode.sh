@@ -30,6 +30,7 @@ for i in $(seq 1 $#); do
         PARSING_OC=true
     elif [[ "$arg" == "--local" ]]; then
         export OPENCODE_PROVIDER="${OPENCODE_PROVIDER:-ollama}"
+        export OPENCODE_MODEL="${OPENCODE_MODEL:-devstral-small-2}"
     elif [[ "$arg" == "--provider" ]]; then
         next=$((i + 1))
         export OPENCODE_PROVIDER="${!next}"
